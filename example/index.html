@@ -17,51 +17,72 @@
       #code > pre {
         background:#fdf6e3
       }
-      #list {
+      ul {
         padding: 10px;
         margin: 0px;
         list-style: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
       }
-      #list > li {
+      ul > li {
+        position: relative;
         padding: 5px;
         margin: 0px;
         line-height: 50px;
         border-bottom: 1px solid #ccc;
         background-color: #fff;
       }
-      #list .remove {
+      .sortable-dragging {
+        z-index: 99;
+      }
+      ul .remove {
         color: #fff;
+        width: 60px;
         padding: 5px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         background-color: tomato;
       }
-      #list .alert {
-        color: tomato;
+      ul .alert {
+        color: #e33;
+      }
+      li span.handler {
+        font-size: 25px;
+        position: absolute;
+        top: 5px;
+        right: 0px;
+        display: block;
+        width: 40px;
+        text-align: center;
+      }
+
+      li span.handler:before {
+        content: '≡';
       }
     </style>
   </head>
   <body>
-    <h2>Basic</h2>
+    <h2>Basic with sortable</h2>
     <ul id="list">
       <li class="alert">need touch to work</li>
-      <li>Javascript</li>
-      <li>Ruby</li>
-      <li>Python</li>
-      <li>Php</li>
-      <li>Go</li>
-      <li>Rust</li>
+      <li>Javascript<span class="handler"></span></li>
+      <li>Ruby<span class="handler"></span></li>
+      <li>Python<span class="handler"></span></li>
+      <li>Php<span class="handler"></span></li>
+      <li>Go<span class="handler"></span></li>
+      <li>Rust<span class="handler"></span></li>
     </ul>
     <h2>Render function</h2>
     <ul id="render">
-      <li class="alert">need touch to work</li>
-      <li>Javascript</li>
-      <li>Ruby</li>
-      <li>Python</li>
-      <li>Php</li>
-      <li>Go</li>
-      <li>Rust</li>
+      <li>Javascript<span class="handler"></span></li>
+      <li>Ruby<span class="handler"></span></li>
+      <li>Python<span class="handler"></span></li>
+      <li>Php<span class="handler"></span></li>
+      <li>Go<span class="handler"></span></li>
+      <li>Rust<span class="handler"></span></li>
     </ul>
     <h2>List render</h2>
     <ul id="render">
