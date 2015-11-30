@@ -44,6 +44,9 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
+	if ('ontouchend' in window) {
+	  document.querySelector('#list .alert').style.display = 'none'
+	}
 	var SwipeIt = __webpack_require__(1)
 	var tap = __webpack_require__(57)
 	

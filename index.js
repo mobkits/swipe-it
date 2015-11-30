@@ -1,3 +1,6 @@
+if ('ontouchend' in window) {
+  document.querySelector('#list .alert').style.display = 'none'
+}
 var SwipeIt = require('..')
 var tap = require('tap-event')
 
