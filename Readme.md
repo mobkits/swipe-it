@@ -62,9 +62,9 @@ Delegate `handler` of `type` event with matched `selector` within swiped out ele
 
 Reset the swiped element to original stat
 
-### .removeHolder([duration], [ease])
+### .remove([duration], [ease])
 
-Remove holder with transition of optional duration (default 300ms) and ease (default ease-out)
+Remove the swipe element and related holder with transition specified by `duration` (default 300) in millisecond and `ease` timing function
 
 ### .unbind()
 

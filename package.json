@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/chemzqm/swipe-it#readme",
   "devDependencies": {
+    "component-tap-event": "^1.1.0",
     "coveralls": "^2.11.4",
     "css-loader": "^0.23.0",
     "expect": "^1.13.0",
@@ -42,15 +43,16 @@
     "karma-mocha": "^0.2.0",
     "karma-webpack": "^1.7.0",
     "karma-wrap-preprocessor": "^0.1.0",
+    "mobile-list": "0.0.4",
     "mocha": "^2.3.3",
     "mocha-loader": "^0.7.1",
     "mocha-notify": "0.0.4",
     "model-component": "^1.2.6",
     "stack-source-map": "^1.0.4",
     "style-loader": "^0.13.0",
+    "sweet-sortable": "^0.1.9",
     "url-loader": "^0.5.6",
     "webpack": "^1.12.6",
-    "component-tap-event": "^1.1.0",
     "webpack-dev-server": "^1.12.1"
   },
   "dependencies": {
@@ -64,7 +66,7 @@
     "computed-style": "^0.3.0",
     "domify": "^1.4.0",
     "prop-detect": "^1.0.0",
-    "reactive-lite": "^0.5.3"
+    "reactive-lite": "^0.5.4"
   },
   "browser": {
     "events": "component-events",
