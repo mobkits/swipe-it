@@ -4,6 +4,8 @@ Swipe a custom element out.
 
 No test case right now, use with caution
 
+[Demo](http://chemzqm.github.io/swipe-it/)
+
 TODO: test
 
 ## Features
