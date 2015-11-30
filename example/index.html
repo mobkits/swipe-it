@@ -11,8 +11,8 @@
     <link rel="stylesheet" href="./common.css" type="text/css" media="all" />
     <style type="text/css" media="screen">
       body {
-        font: 13px / 1.4 Helvetica
-        padding: 80px;
+        font: 13px / 1.4 Helvetica;
+        padding: 30px;
       }
       #code > pre {
         background:#fdf6e3
@@ -25,7 +25,7 @@
       #list > li {
         padding: 5px;
         margin: 0px;
-        height: 50px;
+        line-height: 50px;
         border-bottom: 1px solid #ccc;
         background-color: #fff;
       }
@@ -37,16 +37,40 @@
         justify-content: center;
         background-color: tomato;
       }
+      #list .alert {
+        color: tomato;
+      }
     </style>
   </head>
   <body>
+    <h2>Basic</h2>
     <ul id="list">
-      <li>1</li>
-      <li>2</li>
-      <li>3</li>
-      <li>4</li>
-      <li>5</li>
-      <li>6</li>
+      <li class="alert">need touch to work</li>
+      <li>Javascript</li>
+      <li>Ruby</li>
+      <li>Python</li>
+      <li>Php</li>
+      <li>Go</li>
+      <li>Rust</li>
+    </ul>
+    <h2>Render function</h2>
+    <ul id="render">
+      <li class="alert">need touch to work</li>
+      <li>Javascript</li>
+      <li>Ruby</li>
+      <li>Python</li>
+      <li>Php</li>
+      <li>Go</li>
+      <li>Rust</li>
+    </ul>
+    <h2>List render</h2>
+    <ul id="render">
+      <li>Javascript</li>
+      <li>Ruby</li>
+      <li>Python</li>
+      <li>Php</li>
+      <li>Go</li>
+      <li>Rust</li>
     </ul>
     <script src="./bundle.js" type="text/javascript" charset="utf-8"></script>
   </body>
