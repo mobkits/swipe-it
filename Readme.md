@@ -23,10 +23,12 @@ var SwipeIt = require('swipe-it')
 var template = require('./template.html')
 var s = new SwipeIt(template)
 s.bind(document.getElementById('list'), 'li')
-s.delegate('touchstart', '.remove', function(e, li) {
+s.delegate('touchstart', '.remove', tap(function(e, li) {
   // remove the swiped node
   li.parentNode.removeChild(li)
-})
+  // holder remove with transition
+  s.removeHolder()
+}))
 ```
 
 ## Events
