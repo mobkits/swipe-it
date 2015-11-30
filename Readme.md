@@ -9,7 +9,7 @@ TODO: test
 ## Features
 
 * Animation like ios messages
-* Optional bind to [list-render]()
+* Optional bind to [list-render](https://github.com/chemzqm/list-render)
 * Custom render function
 * Delegate event binding
 
@@ -44,7 +44,7 @@ Bind swipe event to parentNode with delegated selector
 
 ### .bind(ListRender, selector)
 
-Bind to [listRender]() instance, which enables automate model [reative-lite]() bind
+Bind to [listRender](https://github.com/chemzqm/list-render) instance, which enables automate model [reative-lite](https://github.com/chemzqm/reactive-lite) bind
 
 ### .render(fn)
 
