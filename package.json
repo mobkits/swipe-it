@@ -1,0 +1,81 @@
+{
+  "name": "swipe-it",
+  "version": "0.0.1",
+  "description": "",
+  "main": "lib/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "make test-coveralls"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/chemzqm/swipe-it.git"
+  },
+  "keywords": [],
+  "author": "chemzqm@gmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/chemzqm/swipe-it/issues"
+  },
+  "homepage": "https://github.com/chemzqm/swipe-it#readme",
+  "devDependencies": {
+    "coveralls": "^2.11.4",
+    "css-loader": "^0.23.0",
+    "expect": "^1.13.0",
+    "file-loader": "^0.8.5",
+    "growl": "^1.8.1",
+    "gulp": "^3.9.0",
+    "gulp-live-serve": "^1.0.0",
+    "gulp-livereload": "^3.8.1",
+    "gulp-util": "^3.0.7",
+    "html-loader": "^0.4.0",
+    "html5shiv": "^3.7.3",
+    "istanbul": "^0.4.0",
+    "istanbul-instrumenter-loader": "^0.1.3",
+    "json-loader": "^0.5.3",
+    "karma": "^0.13.15",
+    "karma-cli": "^0.1.1",
+    "karma-coverage": "^0.5.3",
+    "karma-firefox-launcher": "^0.1.6",
+    "karma-mocha": "^0.2.0",
+    "karma-webpack": "^1.7.0",
+    "karma-wrap-preprocessor": "^0.1.0",
+    "mocha": "^2.3.3",
+    "mocha-loader": "^0.7.1",
+    "mocha-notify": "0.0.4",
+    "model-component": "^1.2.6",
+    "stack-source-map": "^1.0.4",
+    "style-loader": "^0.13.0",
+    "url-loader": "^0.5.6",
+    "webpack": "^1.12.6",
+    "component-tap-event": "^1.1.0",
+    "webpack-dev-server": "^1.12.1"
+  },
+  "dependencies": {
+    "component-classes": "^1.2.4",
+    "component-emitter": "^1.2.0",
+    "component-event": "^0.1.4",
+    "component-events": "^1.0.9",
+    "component-raf": "^1.2.0",
+    "component-tween": "^1.2.0",
+    "component-uid": "0.0.2",
+    "computed-style": "^0.3.0",
+    "domify": "^1.4.0",
+    "prop-detect": "^1.0.0",
+    "reactive-lite": "^0.5.3"
+  },
+  "browser": {
+    "events": "component-events",
+    "reactive": "reactive-lite",
+    "model": "model-component",
+    "tween": "component-tween",
+    "classes": "component-classes",
+    "raf": "component-raf",
+    "uid": "component-uid",
+    "emitter": "component-emitter",
+    "tap-event": "component-tap-event",
+    "event": "component-event"
+  }
+}
