@@ -443,6 +443,7 @@
 	  this.events.bind('touchstart ' + selector)
 	  this.events.bind('touchmove ' + selector)
 	  this.events.bind('touchend ' + selector)
+	  this.events.bind('touchcancel', 'ontouchend')
 	  this.docEvent.bind('touchend')
 	}
 	
@@ -473,6 +474,7 @@
 	  this.onstart = function () {
 	    // only called once on move
 	    this.onstart = null
+	    this.moving = true
 	    // show template and bind events
 	    var pel = getRelativeElement(el)
 	    var holder = this.holder = createHolder(el)
@@ -517,13 +519,23 @@
 	  var touch = this.getTouch(e)
 	  var cx = touch.clientX
 	  var cy = touch.clientY
-	  //calculate speed every 100 milisecond
-	  this.calcute(cx, cy)
-	  // moving up and down
-	  if (!this.moving && this.dir%2 !== 0) return
+	  if (!this.onstart && !this.moving) return
+	  if (this.onstart) {
+	    var dx = cx - this.down.x
+	    var dy = cy - this.down.y
+	    if (dx === 0 && dy === 0) return
+	    if (Math.abs(dx/dy) > 1) {
+	      e.preventDefault()
+	      this.onstart()
+	    } else {
+	      this.onstart = null
+	    }
+	    return
+	  }
+	  if (e.delegateTarget !== this.swipeEl) return
 	  e.preventDefault()
-	  this.moving = true
-	  if (this.onstart) this.onstart()
+	  //calculate speed every 100 milisecond
+	  this.calculate(cx)
 	  var x = this.down.start + touch.clientX - this.down.x
 	  x = Math.min(0, x)
 	  x = Math.max(x, this.min)
@@ -537,13 +549,12 @@
 	SwipeIt.prototype.ontouchend = function (e) {
 	  this.onstart = null
 	  if (this.stat === 'reseting') return
-	  if (e.defaultPrevented) return
 	  if (!this.down || !this.moving) return
 	  this.moving = false
 	  var target = e.delegateTarget
 	  var touch = this.getTouch(e)
 	  if (target && target !== this.holder) {
-	    this.calcute(touch.clientX, touch.clientY)
+	    this.calculate(touch.clientX)
 	    var m = this.momentum()
 	    if (!m || !m.x) return this.reset()
 	    this.animate(m.x, m.ease, m.duration).catch(function () {
@@ -551,7 +562,7 @@
 	  } else {
 	    this.reset()
 	  }
-	  this.prev = this.down = null
+	  this.down = null
 	}
 	
 	/**
@@ -617,17 +628,9 @@
 	 * @param {Number} x
 	 * @private
 	 */
-	SwipeIt.prototype.calcute = function (x, y) {
+	SwipeIt.prototype.calculate = function (x) {
 	  var ts = Date.now()
 	  var dt = ts - this.ts
-	  var px = this.prev ? this.prev.x : this.down.x
-	  var py = this.prev ? this.prev.y : this.down.y
-	  var p = Math.abs(x - px)/(y - py)
-	  if (p > 1.5) {
-	    this.dir = x - px > 0 ? 0 : 2
-	  } else {
-	    this.dir = y - py > 0 ? 1 : 3
-	  }
 	  if (ts - this.down.at < 100) {
 	    this.distance = x - this.down.x
 	    this.speed = Math.abs(this.distance/dt)
@@ -636,7 +639,6 @@
 	    this.speed = Math.abs(this.distance/dt)
 	    this.ts = ts
 	    this.clientX = x
-	    this.prev = {x: x, y: y}
 	  }
 	}
 	
@@ -681,6 +683,7 @@
 	 * @param {Number} x
 	 */
 	SwipeIt.prototype.translate = function (x) {
+	  if (!this.swipeEl) return
 	  var s = this.swipeEl.style
 	  if (has3d) {
 	    s[transform] = 'translate3d(' + x + 'px, 0, 0)'
@@ -716,24 +719,24 @@
 	  var holder = this.holder
 	  var el = this.swipeEl
 	  if (!el || !holder) return
+	  this.stat = 'reseting'
 	  this.down = null
 	  this.moving = false
-	  this.stat = 'reseting'
 	  this.unbindEvents()
 	  var self = this
 	  var promise = new Promise(function (resolve) {
 	    var promise = self.animate(0, ease, duration)
 	    promise.then(reset, reset)
 	    function reset() {
-	      // restore to original stat
-	      classes(el).remove('swipe-dragging')
-	      // improve performance
-	      el.style[transform] = 'none'
 	      // wait for sortable
 	      var trans = holder.style[transition]
 	      var succeed
 	      var end = function () {
 	        if (trans) event.unbind(holder, transitionend, end)
+	        // restore to original stat
+	        classes(el).remove('swipe-dragging')
+	        // improve performance
+	        el.style[transform] = 'none'
 	        copy(el.style, self.orig)
 	        holder.parentNode.removeChild(holder)
 	        self.stat = self.holder = self.swipeEl = null
@@ -810,12 +813,15 @@
 	 * @return {promise}
 	 */
 	SwipeIt.prototype.clear = function (duration, ease) {
-	  if (this.stat === 'reseting') return
-	  this.stat = 'reseting'
+	  if (this.stat === 'reseting') return Promise.reject(new Error('clear() should not get called when reseting'))
 	  var el = this.holder
+	  var sel = this.swipeEl
+	  if (!el || !sel) return Promise.resolve(null)
+	  this.stat = 'reseting'
+	  this.down = null
+	  this.unbindEvents()
 	  duration = duration || 300
 	  ease = ease || 'ease-out'
-	  var sel = this.swipeEl
 	  copy(sel.style, {
 	    transition: 'all ' + duration + 'ms ' + ease,
 	    transformOrigin: '0% 0%',
@@ -825,11 +831,6 @@
 	  var trans_prop = sel.style[transform]
 	  sel.style[transform] = trans_prop + ' rotateX(90deg)'
 	  el.style[transition] = 'height ' + duration + 'ms ' + ease
-	  this.down = null
-	  this.unbindEvents()
-	  this.emit('remove', sel)
-	  this.emit('end', sel)
-	  if (!el) return
 	  var self = this
 	  var promise = new Promise(function (resolve) {
 	    var succeed
@@ -841,6 +842,8 @@
 	      } else if(sel.parentNode) {
 	        sel.parentNode.removeChild(sel)
 	      }
+	      self.emit('clear', self.sel)
+	      self.emit('end', sel)
 	      self.stat = self.holder = self.swipeEl = null
 	      self.x = 0
 	      succeed = true

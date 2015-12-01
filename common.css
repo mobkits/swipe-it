@@ -53,3 +53,11 @@ pre {
   border-radius: 4px;
   white-space: pre-wrap;
 }
+
+.scrollable {
+  -webkit-user-select: none;
+  user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+}
