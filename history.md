@@ -1,3 +1,6 @@
+0.1.3
+* improve clear to be always works
+
 0.1.2
 * fix transition event not fired when node removed
 * support window resize
