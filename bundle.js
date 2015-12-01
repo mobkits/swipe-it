@@ -44,15 +44,17 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var scrollfix = __webpack_require__(1)
+	scrollfix(document.querySelector('.scrollable'))
 	if ('ontouchend' in window) {
 	  document.querySelector('#list .alert').style.display = 'none'
 	}
-	var detect = __webpack_require__(1)
+	var detect = __webpack_require__(2)
 	var transform = detect.transform
-	var SwipeIt = __webpack_require__(7)
-	var tap = __webpack_require__(54)
-	var Sortable = __webpack_require__(55)
-	var domify = __webpack_require__(8)
+	var SwipeIt = __webpack_require__(8)
+	var tap = __webpack_require__(55)
+	var Sortable = __webpack_require__(56)
+	var domify = __webpack_require__(9)
 	
 	!(function () {
 	  function hide(el) {
@@ -80,6 +82,7 @@
 	  swipe.delegate('touchstart', '.remove', tap(function () {
 	    swipe.clear()
 	  }))
+	  window.swipe = swipe
 	})()
 	
 	!(function () {
@@ -102,7 +105,7 @@
 	  index: 6,
 	  language: 'Rust'
 	}]
-	var List = __webpack_require__(68)
+	var List = __webpack_require__(69)
 	var tmpl = '<li>{language}</li>'
 	var colors = ['tomato', 'gold', 'lightgreen', 'deepskyblue', 'orange', 'violet']
 	var list = new List(tmpl, window, {
@@ -158,21 +161,76 @@
 
 /***/ },
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	exports.transition = __webpack_require__(2)
+	/**
+	 * ScrollFix v0.1
+	 * http://www.joelambert.co.uk
+	 *
+	 * Copyright 2011, Joe Lambert.
+	 * Free to use under the MIT license.
+	 * http://www.opensource.org/licenses/mit-license.php
+	 */
 	
-	exports.transform = __webpack_require__(3)
+	(function () {
+	  var ScrollFix = function(elem) {
+	    // Variables to track inputs
+	    var startY, startTopScroll;
 	
-	exports.touchAction = __webpack_require__(4)
+	    elem = elem || document.querySelector(elem);
 	
-	exports.transitionend = __webpack_require__(5)
+	    // If there is no element, then do nothing
+	    if(!elem) {
+	      return;
+	    }
 	
-	exports.has3d = __webpack_require__(6)
+	    // Handle the start of interactions
+	    elem.addEventListener('touchstart', function(event){
+	      startY = event.touches[0].pageY;
+	      startTopScroll = elem.scrollTop;
+	
+	      if(startTopScroll <= 0) {
+	        elem.scrollTop = 1;
+	      }
+	
+	      if(startTopScroll + elem.offsetHeight >= elem.scrollHeight) {
+	        elem.scrollTop = elem.scrollHeight - elem.offsetHeight - 1;
+	      }
+	
+	    }, false);
+	
+	  };
+	
+	  // if we've got a window and we don't have a module
+	  // create a global;
+	  if ((typeof window != 'undefined') && (typeof module == 'undefined')) {
+	    window.ScrollFix = ScrollFix;
+	  }
+	  // otherwise, export it.
+	  else {
+	    module.exports = ScrollFix;
+	  }
+	
+	})();
 
 
 /***/ },
 /* 2 */
+/***/ function(module, exports, __webpack_require__) {
+
+	exports.transition = __webpack_require__(3)
+	
+	exports.transform = __webpack_require__(4)
+	
+	exports.touchAction = __webpack_require__(5)
+	
+	exports.transitionend = __webpack_require__(6)
+	
+	exports.has3d = __webpack_require__(7)
+
+
+/***/ },
+/* 3 */
 /***/ function(module, exports) {
 
 	var styles = [
@@ -198,7 +256,7 @@
 
 
 /***/ },
-/* 3 */
+/* 4 */
 /***/ function(module, exports) {
 
 	
@@ -223,7 +281,7 @@
 
 
 /***/ },
-/* 4 */
+/* 5 */
 /***/ function(module, exports) {
 
 	
@@ -249,7 +307,7 @@
 
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports) {
 
 	/**
@@ -279,11 +337,11 @@
 
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var prop = __webpack_require__(3);
+	var prop = __webpack_require__(4);
 	
 	// IE <=8 doesn't have `getComputedStyle`
 	if (!prop || !window.getComputedStyle) {
@@ -309,25 +367,28 @@
 
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var domify = __webpack_require__(8)
-	var events = __webpack_require__(9)
-	var Reactive = __webpack_require__(15)
-	var Tween = __webpack_require__(22)
+	var domify = __webpack_require__(9)
+	var events = __webpack_require__(10)
+	var Reactive = __webpack_require__(16)
+	var Tween = __webpack_require__(23)
 	var doc = document.documentElement
-	var styles = __webpack_require__(26)
-	var classes = __webpack_require__(27)
-	var raf = __webpack_require__(29)
-	var uid = __webpack_require__(30)
-	var event = __webpack_require__(10)
-	var Emitter = __webpack_require__(20)
-	var detect = __webpack_require__(1)
+	var styles = __webpack_require__(27)
+	var classes = __webpack_require__(28)
+	var raf = __webpack_require__(30)
+	var uid = __webpack_require__(31)
+	var event = __webpack_require__(11)
+	var Emitter = __webpack_require__(21)
+	var detect = __webpack_require__(2)
 	var transform = detect.transform
 	var transition = detect.transition
 	var transitionend = detect.transitionend
 	var has3d = detect.has3d
+	
+	// max overlap 20px
+	var overlap = 20
 	
 	/**
 	 * `template` string or element for element swiped out
@@ -347,6 +408,9 @@
 	    this.template = template.outerHTML
 	  }
 	  this.x = 0
+	  this._onresize = this.onresize.bind(this)
+	  window.addEventListener('orientationchange', this._onresize, false)
+	  window.addEventListener('resize', this._onresize, false)
 	}
 	
 	Emitter(SwipeIt.prototype)
@@ -388,12 +452,11 @@
 	 */
 	SwipeIt.prototype.ontouchstart = function (e) {
 	  var el = e.delegateTarget
-	  if (this.stat === 'reseting' || el === this.holder) return
+	  if (this.stat === 'reseting' || (this.holder && el === this.holder)) return
 	  if (this.tween) this.tween.stop()
 	  // already moved
-	  var moved = this.x !== 0
-	  if (moved && el === this.swipeEl) return this.reset()
-	  if (moved) return this.reset('out-quad', 100)
+	  if (this.swipeEl && el === this.swipeEl) return this.reset()
+	  if (this.swipeEl) return this.reset('out-quad', 100)
 	  // do nothing if handled
 	  if (e.defaultPrevented) return
 	  var touch = this.getTouch(e)
@@ -406,7 +469,6 @@
 	    start: this.x,
 	    at: this.ts
 	  }
-	  this.swipeEl = el
 	  var opts = this.reactiveOpts
 	  this.onstart = function () {
 	    // only called once on move
@@ -414,6 +476,7 @@
 	    // show template and bind events
 	    var pel = getRelativeElement(el)
 	    var holder = this.holder = createHolder(el)
+	    this.swipeEl = el
 	    if (this.renderFn) {
 	      this.renderFn(holder)
 	    } else {
@@ -440,7 +503,7 @@
 	        this.reactive.bind(model)
 	      }
 	    }
-	    this.min = - templateEl.clientWidth - 20
+	    this.min = - templateEl.clientWidth - overlap
 	    this.emit('start', el)
 	  }
 	}
@@ -452,21 +515,18 @@
 	SwipeIt.prototype.ontouchmove = function (e) {
 	  if (this.stat === 'reseting' || !this.down) return
 	  var touch = this.getTouch(e)
-	  var dx = touch.clientX - this.down.x
-	  var dy = touch.clientY - this.down.y
-	  // moving up and down
-	  if (Math.abs(dx/dy) < 1) return
-	  if (this.tween) this.tween.stop()
-	  if (this.onstart) this.onstart()
-	  this.moving = true
 	  var cx = touch.clientX
-	  this.clientX = this.clientX || cx
+	  var cy = touch.clientY
 	  //calculate speed every 100 milisecond
-	  this.calcuteSpeed(cx)
-	  var x = this.down.start + dx
+	  this.calcute(cx, cy)
+	  // moving up and down
+	  if (!this.moving && this.dir%2 !== 0) return
+	  e.preventDefault()
+	  this.moving = true
+	  if (this.onstart) this.onstart()
+	  var x = this.down.start + touch.clientX - this.down.x
 	  x = Math.min(0, x)
 	  x = Math.max(x, this.min)
-	  if (x !== 0) e.preventDefault()
 	  this.translate(x)
 	}
 	
@@ -481,9 +541,9 @@
 	  if (!this.down || !this.moving) return
 	  this.moving = false
 	  var target = e.delegateTarget
+	  var touch = this.getTouch(e)
 	  if (target && target !== this.holder) {
-	    var touch = this.getTouch(e)
-	    this.calcuteSpeed(touch.clientX)
+	    this.calcute(touch.clientX, touch.clientY)
 	    var m = this.momentum()
 	    if (!m || !m.x) return this.reset()
 	    this.animate(m.x, m.ease, m.duration).catch(function () {
@@ -491,6 +551,7 @@
 	  } else {
 	    this.reset()
 	  }
+	  this.prev = this.down = null
 	}
 	
 	/**
@@ -551,14 +612,22 @@
 	}
 	
 	/**
-	 * Calcute swipe speed with translateX
+	 * Calcute swipe speed and direction with clientX clientY
 	 *
 	 * @param {Number} x
 	 * @private
 	 */
-	SwipeIt.prototype.calcuteSpeed = function (x) {
+	SwipeIt.prototype.calcute = function (x, y) {
 	  var ts = Date.now()
 	  var dt = ts - this.ts
+	  var px = this.prev ? this.prev.x : this.down.x
+	  var py = this.prev ? this.prev.y : this.down.y
+	  var p = Math.abs(x - px)/(y - py)
+	  if (p > 1.5) {
+	    this.dir = x - px > 0 ? 0 : 2
+	  } else {
+	    this.dir = y - py > 0 ? 1 : 3
+	  }
 	  if (ts - this.down.at < 100) {
 	    this.distance = x - this.down.x
 	    this.speed = Math.abs(this.distance/dt)
@@ -567,6 +636,7 @@
 	    this.speed = Math.abs(this.distance/dt)
 	    this.ts = ts
 	    this.clientX = x
+	    this.prev = {x: x, y: y}
 	  }
 	}
 	
@@ -574,7 +644,7 @@
 	  var x = this.x
 	  var deceleration = 0.0004
 	  var speed = Math.min(this.speed, 0.8)
-	  var minX = - this.templateEl.getBoundingClientRect().width
+	  var minX = this.min + overlap
 	  var destination = x + ( speed * speed ) / ( 2 * deceleration ) * ( this.distance < 0 ? -1 : 1 )
 	  var moveSpeed = 0.1
 	  var ease = 'out-quad'
@@ -586,7 +656,12 @@
 	  // should be shown
 	  } else if (destination < minX/2) {
 	    destination = minX
-	    duration = 2*Math.abs(destination - x)/Math.max(speed, 0.4)
+	    if (x > minX) {
+	      ease = getOutBack(x - minX, overlap)
+	      duration = (x - minX + 2*overlap)/Math.max(speed, 0.15)
+	    } else {
+	      duration = 2*Math.abs(destination - x)/Math.max(speed, 0.4)
+	    }
 	  // should not shown
 	  } else {
 	    destination = 0
@@ -638,21 +713,17 @@
 	 */
 	SwipeIt.prototype.reset = function (ease, duration) {
 	  if (this.stat === 'reseting') return
-	  this.down = null
 	  var holder = this.holder
 	  var el = this.swipeEl
 	  if (!el || !holder) return
+	  this.down = null
+	  this.moving = false
 	  this.stat = 'reseting'
 	  this.unbindEvents()
-	  this.emit('end', el)
 	  var self = this
 	  var promise = new Promise(function (resolve) {
-	    if (self.x === 0) {
-	      reset()
-	    } else {
-	      var promise = self.animate(0, ease, duration)
-	      promise.then(reset, reset)
-	    }
+	    var promise = self.animate(0, ease, duration)
+	    promise.then(reset, reset)
 	    function reset() {
 	      // restore to original stat
 	      classes(el).remove('swipe-dragging')
@@ -660,13 +731,21 @@
 	      el.style[transform] = 'none'
 	      // wait for sortable
 	      var trans = holder.style[transition]
+	      var succeed
 	      var end = function () {
 	        if (trans) event.unbind(holder, transitionend, end)
 	        copy(el.style, self.orig)
 	        holder.parentNode.removeChild(holder)
 	        self.stat = self.holder = self.swipeEl = null
+	        self.x = 0
+	        self.emit('end', el)
+	        succeed = true
 	        resolve()
 	      }
+	      // make sure called
+	      setTimeout(function () {
+	        if (!succeed) end()
+	      }, 300)
 	      if (trans) {
 	        event.bind(holder, transitionend, end)
 	      } else {
@@ -686,6 +765,7 @@
 	 * @return {Promise}
 	 */
 	SwipeIt.prototype.animate = function (x, ease, duration) {
+	  if (x == this.x) return Promise.resolve(null)
 	  ease = ease || 'out-quad'
 	  duration = duration || 350
 	  var tween = this.tween = Tween({x : this.x})
@@ -701,6 +781,7 @@
 	  var promise = new Promise(function (resolve, reject) {
 	    var rejected
 	    tween.on('stop', function () {
+	      self.tween = null
 	      rejected = true
 	      reject()
 	    })
@@ -750,14 +831,14 @@
 	  this.emit('end', sel)
 	  if (!el) return
 	  var self = this
-	  var promise = new Promise(function (resolve, reject) {
+	  var promise = new Promise(function (resolve) {
 	    var succeed
 	    var end = function () {
 	      event.unbind(el, transitionend, end)
-	      el.parentNode.removeChild(el)
+	      if (el.parentNode) el.parentNode.removeChild(el)
 	      if (self.reactive) {
 	        self.reactive.model.remove()
-	      } else {
+	      } else if(sel.parentNode) {
 	        sel.parentNode.removeChild(sel)
 	      }
 	      self.stat = self.holder = self.swipeEl = null
@@ -766,10 +847,8 @@
 	      resolve()
 	    }
 	    setTimeout(function () {
-	      if (!succeed) {
-	        reject(new Error('Transitionend event not fired'))
-	        end()
-	      }
+	      if (!succeed) end()
+	      resolve()
 	    }, duration)
 	    event.bind(el, transitionend, end)
 	    el.style.height = '0px'
@@ -787,11 +866,23 @@
 	  this.unbindEvents()
 	  this.events.unbind()
 	  this.docEvent.unbind()
+	  window.addEventListener('orientationchange', this._onresize, false)
+	  window.addEventListener('resize', this._onresize, false)
 	  if (this.reactive) this.reactive.remove()
 	}
 	
-	function isHolder(el) {
-	  return classes(el).has('swipe-holder')
+	SwipeIt.prototype.onresize = function () {
+	  var el = this.swipeEl
+	  if (!el) return
+	  var holder = this.holder
+	  var pel = getRelativeElement(holder)
+	  var pos = getAbsolutePosition(holder, pel)
+	  copy(el.style, {
+	    height: pos.height + 'px',
+	    width: pos.width + 'px',
+	    left: pos.left + 'px',
+	    top: pos.top + 'px'
+	  })
 	}
 	
 	function createHolder(el) {
@@ -889,11 +980,24 @@
 	  return orig
 	}
 	
+	
+	function getOutBack(dis, overlap) {
+	  var b = (dis + overlap)/dis
+	  return function (n) {
+	    var m = 0.75
+	    var a = b/(m * m)
+	    if (n <= m) {
+	      return -a *(n - m)*(n - m) + b
+	    }
+	    return b - (n - m)*(b - 1)/(1 - m)
+	  }
+	}
+	
 	module.exports = SwipeIt
 
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports) {
 
 	
@@ -1011,7 +1115,7 @@
 
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -1019,8 +1123,8 @@
 	 * Module dependencies.
 	 */
 	
-	var events = __webpack_require__(10);
-	var delegate = __webpack_require__(11);
+	var events = __webpack_require__(11);
+	var delegate = __webpack_require__(12);
 	
 	/**
 	 * Expose `Events`.
@@ -1193,7 +1297,7 @@
 
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports) {
 
 	var bind = window.addEventListener ? 'addEventListener' : 'attachEvent',
@@ -1233,15 +1337,15 @@
 	};
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module dependencies.
 	 */
 	
-	var closest = __webpack_require__(12)
-	  , event = __webpack_require__(10);
+	var closest = __webpack_require__(13)
+	  , event = __webpack_require__(11);
 	
 	/**
 	 * Delegate event `type` to `selector`
@@ -1281,14 +1385,14 @@
 
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module Dependencies
 	 */
 	
-	var matches = __webpack_require__(13)
+	var matches = __webpack_require__(14)
 	
 	/**
 	 * Export `closest`
@@ -1319,14 +1423,14 @@
 
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module dependencies.
 	 */
 	
-	var query = __webpack_require__(14);
+	var query = __webpack_require__(15);
 	
 	/**
 	 * Element prototype.
@@ -1371,7 +1475,7 @@
 
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports) {
 
 	function one(selector, el) {
@@ -1398,16 +1502,16 @@
 
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var util = __webpack_require__(16)
-	var domify = __webpack_require__(8)
-	var Binding = __webpack_require__(18)
-	var bindings = __webpack_require__(19)
-	var Emitter = __webpack_require__(20)
-	var filters = __webpack_require__(21)
-	var event = __webpack_require__(10)
+	var util = __webpack_require__(17)
+	var domify = __webpack_require__(9)
+	var Binding = __webpack_require__(19)
+	var bindings = __webpack_require__(20)
+	var Emitter = __webpack_require__(21)
+	var filters = __webpack_require__(22)
+	var event = __webpack_require__(11)
 	
 	/**
 	 * Reactive
@@ -1655,10 +1759,10 @@
 
 
 /***/ },
-/* 16 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var unique = __webpack_require__(17)
+	var unique = __webpack_require__(18)
 	var funcRe = /\([^\s]*\)$/
 	
 	/**
@@ -1923,7 +2027,7 @@
 
 
 /***/ },
-/* 17 */
+/* 18 */
 /***/ function(module, exports) {
 
 	/*!
@@ -1957,11 +2061,11 @@
 
 
 /***/ },
-/* 18 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var unique = __webpack_require__(17)
-	var util = __webpack_require__(16)
+	var unique = __webpack_require__(18)
+	var util = __webpack_require__(17)
 	
 	/**
 	 * Create binding instance with reactive and el
@@ -2125,11 +2229,11 @@
 
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var util = __webpack_require__(16)
-	var event = __webpack_require__(10)
+	var util = __webpack_require__(17)
+	var event = __webpack_require__(11)
 	
 	/**
 	 * Attributes supported.
@@ -2303,7 +2407,7 @@
 
 
 /***/ },
-/* 20 */
+/* 21 */
 /***/ function(module, exports) {
 
 	
@@ -2470,7 +2574,7 @@
 
 
 /***/ },
-/* 21 */
+/* 22 */
 /***/ function(module, exports) {
 
 	/**
@@ -2562,7 +2666,7 @@
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -2570,10 +2674,10 @@
 	 * Module dependencies.
 	 */
 	
-	var Emitter = __webpack_require__(20);
-	var clone = __webpack_require__(23);
-	var type = __webpack_require__(24);
-	var ease = __webpack_require__(25);
+	var Emitter = __webpack_require__(21);
+	var clone = __webpack_require__(24);
+	var type = __webpack_require__(25);
+	var ease = __webpack_require__(26);
 	
 	/**
 	 * Expose `Tween`.
@@ -2745,7 +2849,7 @@
 	};
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -2754,9 +2858,9 @@
 	
 	var type;
 	try {
-	  type = __webpack_require__(24);
+	  type = __webpack_require__(25);
 	} catch (_) {
-	  type = __webpack_require__(24);
+	  type = __webpack_require__(25);
 	}
 	
 	/**
@@ -2808,7 +2912,7 @@
 
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports) {
 
 	/**
@@ -2848,7 +2952,7 @@
 
 
 /***/ },
-/* 25 */
+/* 26 */
 /***/ function(module, exports) {
 
 	
@@ -3024,7 +3128,7 @@
 
 
 /***/ },
-/* 26 */
+/* 27 */
 /***/ function(module, exports) {
 
 	// DEV: We don't use var but favor parameters since these play nicer with minification
@@ -3057,14 +3161,14 @@
 
 
 /***/ },
-/* 27 */
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module dependencies.
 	 */
 	
-	var index = __webpack_require__(28);
+	var index = __webpack_require__(29);
 	
 	/**
 	 * Whitespace regexp.
@@ -3250,7 +3354,7 @@
 
 
 /***/ },
-/* 28 */
+/* 29 */
 /***/ function(module, exports) {
 
 	module.exports = function(arr, obj){
@@ -3262,7 +3366,7 @@
 	};
 
 /***/ },
-/* 29 */
+/* 30 */
 /***/ function(module, exports) {
 
 	/**
@@ -3302,7 +3406,7 @@
 
 
 /***/ },
-/* 30 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -3349,7 +3453,7 @@
 	      return tostr(a);
 	    }
 	  } else {
-	    var crypto = __webpack_require__(31); // avoid browserify polyfill
+	    var crypto = __webpack_require__(32); // avoid browserify polyfill
 	    try {
 	      return tostr(crypto.randomBytes(length));
 	    } catch (e) {
@@ -3367,10 +3471,10 @@
 
 
 /***/ },
-/* 31 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(Buffer) {var rng = __webpack_require__(36)
+	/* WEBPACK VAR INJECTION */(function(Buffer) {var rng = __webpack_require__(37)
 	
 	function error () {
 	  var m = [].slice.call(arguments).join(' ')
@@ -3381,9 +3485,9 @@
 	    ].join('\n'))
 	}
 	
-	exports.createHash = __webpack_require__(38)
+	exports.createHash = __webpack_require__(39)
 	
-	exports.createHmac = __webpack_require__(51)
+	exports.createHmac = __webpack_require__(52)
 	
 	exports.randomBytes = function(size, callback) {
 	  if (callback && callback.call) {
@@ -3404,7 +3508,7 @@
 	  return ['sha1', 'sha256', 'sha512', 'md5', 'rmd160']
 	}
 	
-	var p = __webpack_require__(52)(exports)
+	var p = __webpack_require__(53)(exports)
 	exports.pbkdf2 = p.pbkdf2
 	exports.pbkdf2Sync = p.pbkdf2Sync
 	
@@ -3424,10 +3528,10 @@
 	  }
 	})
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(32).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(33).Buffer))
 
 /***/ },
-/* 32 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(Buffer, global) {/*!
@@ -3438,9 +3542,9 @@
 	 */
 	/* eslint-disable no-proto */
 	
-	var base64 = __webpack_require__(33)
-	var ieee754 = __webpack_require__(34)
-	var isArray = __webpack_require__(35)
+	var base64 = __webpack_require__(34)
+	var ieee754 = __webpack_require__(35)
+	var isArray = __webpack_require__(36)
 	
 	exports.Buffer = Buffer
 	exports.SlowBuffer = SlowBuffer
@@ -4975,10 +5079,10 @@
 	  return i
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(32).Buffer, (function() { return this; }())))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(33).Buffer, (function() { return this; }())))
 
 /***/ },
-/* 33 */
+/* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -5108,7 +5212,7 @@
 
 
 /***/ },
-/* 34 */
+/* 35 */
 /***/ function(module, exports) {
 
 	exports.read = function (buffer, offset, isLE, mLen, nBytes) {
@@ -5198,7 +5302,7 @@
 
 
 /***/ },
-/* 35 */
+/* 36 */
 /***/ function(module, exports) {
 
 	
@@ -5237,13 +5341,13 @@
 
 
 /***/ },
-/* 36 */
+/* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, Buffer) {(function() {
 	  var g = ('undefined' === typeof window ? global : window) || {}
 	  _crypto = (
-	    g.crypto || g.msCrypto || __webpack_require__(37)
+	    g.crypto || g.msCrypto || __webpack_require__(38)
 	  )
 	  module.exports = function(size) {
 	    // Modern Browsers
@@ -5267,22 +5371,22 @@
 	  }
 	}())
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(32).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(33).Buffer))
 
 /***/ },
-/* 37 */
+/* 38 */
 /***/ function(module, exports) {
 
 	/* (ignored) */
 
 /***/ },
-/* 38 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(Buffer) {var createHash = __webpack_require__(39)
+	/* WEBPACK VAR INJECTION */(function(Buffer) {var createHash = __webpack_require__(40)
 	
-	var md5 = toConstructor(__webpack_require__(48))
-	var rmd160 = toConstructor(__webpack_require__(50))
+	var md5 = toConstructor(__webpack_require__(49))
+	var rmd160 = toConstructor(__webpack_require__(51))
 	
 	function toConstructor (fn) {
 	  return function () {
@@ -5310,10 +5414,10 @@
 	  return createHash(alg)
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(32).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(33).Buffer))
 
 /***/ },
-/* 39 */
+/* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var exports = module.exports = function (alg) {
@@ -5322,16 +5426,16 @@
 	  return new Alg()
 	}
 	
-	var Buffer = __webpack_require__(32).Buffer
-	var Hash   = __webpack_require__(40)(Buffer)
+	var Buffer = __webpack_require__(33).Buffer
+	var Hash   = __webpack_require__(41)(Buffer)
 	
-	exports.sha1 = __webpack_require__(41)(Buffer, Hash)
-	exports.sha256 = __webpack_require__(46)(Buffer, Hash)
-	exports.sha512 = __webpack_require__(47)(Buffer, Hash)
+	exports.sha1 = __webpack_require__(42)(Buffer, Hash)
+	exports.sha256 = __webpack_require__(47)(Buffer, Hash)
+	exports.sha512 = __webpack_require__(48)(Buffer, Hash)
 
 
 /***/ },
-/* 40 */
+/* 41 */
 /***/ function(module, exports) {
 
 	module.exports = function (Buffer) {
@@ -5414,7 +5518,7 @@
 
 
 /***/ },
-/* 41 */
+/* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -5426,7 +5530,7 @@
 	 * See http://pajhome.org.uk/crypt/md5 for details.
 	 */
 	
-	var inherits = __webpack_require__(42).inherits
+	var inherits = __webpack_require__(43).inherits
 	
 	module.exports = function (Buffer, Hash) {
 	
@@ -5558,7 +5662,7 @@
 
 
 /***/ },
-/* 42 */
+/* 43 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, process) {// Copyright Joyent, Inc. and other Node contributors.
@@ -6086,7 +6190,7 @@
 	}
 	exports.isPrimitive = isPrimitive;
 	
-	exports.isBuffer = __webpack_require__(44);
+	exports.isBuffer = __webpack_require__(45);
 	
 	function objectToString(o) {
 	  return Object.prototype.toString.call(o);
@@ -6130,7 +6234,7 @@
 	 *     prototype.
 	 * @param {function} superCtor Constructor function to inherit prototype from.
 	 */
-	exports.inherits = __webpack_require__(45);
+	exports.inherits = __webpack_require__(46);
 	
 	exports._extend = function(origin, add) {
 	  // Don't do anything if add isn't an object
@@ -6148,10 +6252,10 @@
 	  return Object.prototype.hasOwnProperty.call(obj, prop);
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(43)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(44)))
 
 /***/ },
-/* 43 */
+/* 44 */
 /***/ function(module, exports) {
 
 	// shim for using process in browser
@@ -6248,7 +6352,7 @@
 
 
 /***/ },
-/* 44 */
+/* 45 */
 /***/ function(module, exports) {
 
 	module.exports = function isBuffer(arg) {
@@ -6259,7 +6363,7 @@
 	}
 
 /***/ },
-/* 45 */
+/* 46 */
 /***/ function(module, exports) {
 
 	if (typeof Object.create === 'function') {
@@ -6288,7 +6392,7 @@
 
 
 /***/ },
-/* 46 */
+/* 47 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -6300,7 +6404,7 @@
 	 *
 	 */
 	
-	var inherits = __webpack_require__(42).inherits
+	var inherits = __webpack_require__(43).inherits
 	
 	module.exports = function (Buffer, Hash) {
 	
@@ -6441,10 +6545,10 @@
 
 
 /***/ },
-/* 47 */
+/* 48 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var inherits = __webpack_require__(42).inherits
+	var inherits = __webpack_require__(43).inherits
 	
 	module.exports = function (Buffer, Hash) {
 	  var K = [
@@ -6691,7 +6795,7 @@
 
 
 /***/ },
-/* 48 */
+/* 49 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -6703,7 +6807,7 @@
 	 * See http://pajhome.org.uk/crypt/md5 for more info.
 	 */
 	
-	var helpers = __webpack_require__(49);
+	var helpers = __webpack_require__(50);
 	
 	/*
 	 * Calculate the MD5 of an array of little-endian words, and a bit length
@@ -6852,7 +6956,7 @@
 
 
 /***/ },
-/* 49 */
+/* 50 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(Buffer) {var intSize = 4;
@@ -6890,10 +6994,10 @@
 	
 	module.exports = { hash: hash };
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(32).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(33).Buffer))
 
 /***/ },
-/* 50 */
+/* 51 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(Buffer) {
@@ -7102,13 +7206,13 @@
 	
 	
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(32).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(33).Buffer))
 
 /***/ },
-/* 51 */
+/* 52 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(Buffer) {var createHash = __webpack_require__(38)
+	/* WEBPACK VAR INJECTION */(function(Buffer) {var createHash = __webpack_require__(39)
 	
 	var zeroBuffer = new Buffer(128)
 	zeroBuffer.fill(0)
@@ -7152,13 +7256,13 @@
 	}
 	
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(32).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(33).Buffer))
 
 /***/ },
-/* 52 */
+/* 53 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var pbkdf2Export = __webpack_require__(53)
+	var pbkdf2Export = __webpack_require__(54)
 	
 	module.exports = function (crypto, exports) {
 	  exports = exports || {}
@@ -7173,7 +7277,7 @@
 
 
 /***/ },
-/* 53 */
+/* 54 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(Buffer) {module.exports = function(crypto) {
@@ -7261,10 +7365,10 @@
 	  }
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(32).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(33).Buffer))
 
 /***/ },
-/* 54 */
+/* 55 */
 /***/ function(module, exports) {
 
 	var endEvents = [
@@ -7358,24 +7462,24 @@
 
 
 /***/ },
-/* 55 */
+/* 56 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * dependencies
 	 */
 	
-	var emitter = __webpack_require__(20)
-	var classes = __webpack_require__(27)
-	var events = __webpack_require__(9)
-	var closest = __webpack_require__(56)
-	var event = __webpack_require__(10)
-	var throttle = __webpack_require__(59)
-	var transform = __webpack_require__(60)
-	var util = __webpack_require__(61)
-	var Animate = __webpack_require__(65)
-	var transition = __webpack_require__(63)
-	var transitionend = __webpack_require__(66)
+	var emitter = __webpack_require__(21)
+	var classes = __webpack_require__(28)
+	var events = __webpack_require__(10)
+	var closest = __webpack_require__(57)
+	var event = __webpack_require__(11)
+	var throttle = __webpack_require__(60)
+	var transform = __webpack_require__(61)
+	var util = __webpack_require__(62)
+	var Animate = __webpack_require__(66)
+	var transition = __webpack_require__(64)
+	var transitionend = __webpack_require__(67)
 	
 	var hasTouch = 'ontouchend' in window
 	
@@ -7692,14 +7796,14 @@
 
 
 /***/ },
-/* 56 */
+/* 57 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module Dependencies
 	 */
 	
-	var matches = __webpack_require__(57)
+	var matches = __webpack_require__(58)
 	
 	/**
 	 * Export `closest`
@@ -7730,14 +7834,14 @@
 
 
 /***/ },
-/* 57 */
+/* 58 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module dependencies.
 	 */
 	
-	var query = __webpack_require__(58);
+	var query = __webpack_require__(59);
 	
 	/**
 	 * Element prototype.
@@ -7782,7 +7886,7 @@
 
 
 /***/ },
-/* 58 */
+/* 59 */
 /***/ function(module, exports) {
 
 	function one(selector, el) {
@@ -7809,14 +7913,14 @@
 
 
 /***/ },
-/* 59 */
+/* 60 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module Dependencies.
 	 */
 	
-	var raf = __webpack_require__(29);
+	var raf = __webpack_require__(30);
 	
 	/**
 	 * Export `throttle`.
@@ -7852,7 +7956,7 @@
 
 
 /***/ },
-/* 60 */
+/* 61 */
 /***/ function(module, exports) {
 
 	
@@ -7877,14 +7981,14 @@
 
 
 /***/ },
-/* 61 */
+/* 62 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var styles = __webpack_require__(26)
-	var transform = __webpack_require__(60)
-	var has3d = __webpack_require__(62)
-	var transition = __webpack_require__(63)
-	var touchAction = __webpack_require__(64)
+	var styles = __webpack_require__(27)
+	var transform = __webpack_require__(61)
+	var has3d = __webpack_require__(63)
+	var transition = __webpack_require__(64)
+	var touchAction = __webpack_require__(65)
 	
 	/**
 	 * Get the child of topEl by element within a child
@@ -7974,14 +8078,14 @@
 	 * @api public
 	 */
 	exports.getRelativeElement = function (el) {
-	  do {
-	    el = el.parentNode
+	  while(el) {
 	    if (el === doc) return el
 	    var p = styles(el, 'position')
 	    if (p === 'absolute' || p === 'fixed' || p === 'relative') {
 	      return el
 	    }
-	  } while(el)
+	    el = el.parentNode
+	  }
 	}
 	
 	/**
@@ -8110,11 +8214,11 @@
 
 
 /***/ },
-/* 62 */
+/* 63 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var prop = __webpack_require__(60);
+	var prop = __webpack_require__(61);
 	
 	// IE <=8 doesn't have `getComputedStyle`
 	if (!prop || !window.getComputedStyle) {
@@ -8140,7 +8244,7 @@
 
 
 /***/ },
-/* 63 */
+/* 64 */
 /***/ function(module, exports) {
 
 	var styles = [
@@ -8166,7 +8270,7 @@
 
 
 /***/ },
-/* 64 */
+/* 65 */
 /***/ function(module, exports) {
 
 	
@@ -8192,15 +8296,15 @@
 
 
 /***/ },
-/* 65 */
+/* 66 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var util = __webpack_require__(61)
-	var transform = __webpack_require__(60)
-	var transition = __webpack_require__(63)
-	var transitionend = __webpack_require__(66)
-	var event = __webpack_require__(10)
-	var uid = __webpack_require__(67)
+	var util = __webpack_require__(62)
+	var transform = __webpack_require__(61)
+	var transition = __webpack_require__(64)
+	var transitionend = __webpack_require__(67)
+	var event = __webpack_require__(11)
+	var uid = __webpack_require__(68)
 	
 	function Animate(pel, dragEl, holder) {
 	  var d = this.dragEl = dragEl
@@ -8326,7 +8430,7 @@
 
 
 /***/ },
-/* 66 */
+/* 67 */
 /***/ function(module, exports) {
 
 	/**
@@ -8356,7 +8460,7 @@
 
 
 /***/ },
-/* 67 */
+/* 68 */
 /***/ function(module, exports) {
 
 	/**
@@ -8379,20 +8483,20 @@
 
 
 /***/ },
-/* 68 */
+/* 69 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(setImmediate) {__webpack_require__(70)
-	var inherits = __webpack_require__(71)
-	var events = __webpack_require__(9)
-	var Iscroll = __webpack_require__(72)
-	var Emitter = __webpack_require__(20)
-	var ListRender = __webpack_require__(76)
-	var More = __webpack_require__(81)
-	var Ptr = __webpack_require__(85)
-	var throttle = __webpack_require__(74)
-	var event = __webpack_require__(10)
-	var computedStyle = __webpack_require__(26)
+	/* WEBPACK VAR INJECTION */(function(setImmediate) {__webpack_require__(71)
+	var inherits = __webpack_require__(72)
+	var events = __webpack_require__(10)
+	var Iscroll = __webpack_require__(73)
+	var Emitter = __webpack_require__(21)
+	var ListRender = __webpack_require__(77)
+	var More = __webpack_require__(82)
+	var Ptr = __webpack_require__(86)
+	var throttle = __webpack_require__(75)
+	var event = __webpack_require__(11)
+	var computedStyle = __webpack_require__(27)
 	
 	/**
 	 * List constructor
@@ -8779,13 +8883,13 @@
 	
 	module.exports = List
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(69).setImmediate))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(70).setImmediate))
 
 /***/ },
-/* 69 */
+/* 70 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(setImmediate, clearImmediate) {var nextTick = __webpack_require__(43).nextTick;
+	/* WEBPACK VAR INJECTION */(function(setImmediate, clearImmediate) {var nextTick = __webpack_require__(44).nextTick;
 	var apply = Function.prototype.apply;
 	var slice = Array.prototype.slice;
 	var immediateIds = {};
@@ -8861,10 +8965,10 @@
 	exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate : function(id) {
 	  delete immediateIds[id];
 	};
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(69).setImmediate, __webpack_require__(69).clearImmediate))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(70).setImmediate, __webpack_require__(70).clearImmediate))
 
 /***/ },
-/* 70 */
+/* 71 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(setImmediate) {
@@ -8875,10 +8979,10 @@
 	  }
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(69).setImmediate))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(70).setImmediate))
 
 /***/ },
-/* 71 */
+/* 72 */
 /***/ function(module, exports) {
 
 	if (typeof Object.create === 'function') {
@@ -8907,27 +9011,27 @@
 
 
 /***/ },
-/* 72 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = __webpack_require__(73)
-
-
-/***/ },
 /* 73 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var detect = __webpack_require__(1)
+	module.exports = __webpack_require__(74)
+
+
+/***/ },
+/* 74 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var detect = __webpack_require__(2)
 	var touchAction = detect.touchAction
 	var transform = detect.transform
 	var has3d = detect.has3d
-	var computedStyle = __webpack_require__(26)
-	var Emitter = __webpack_require__(20)
-	var events = __webpack_require__(9)
-	var Tween = __webpack_require__(22)
-	var raf = __webpack_require__(29)
-	var throttle = __webpack_require__(74)
-	var Handlebar = __webpack_require__(75)
+	var computedStyle = __webpack_require__(27)
+	var Emitter = __webpack_require__(21)
+	var events = __webpack_require__(10)
+	var Tween = __webpack_require__(23)
+	var raf = __webpack_require__(30)
+	var throttle = __webpack_require__(75)
+	var Handlebar = __webpack_require__(76)
 	var max = Math.max
 	var min = Math.min
 	var now = Date.now
@@ -9336,7 +9440,7 @@
 
 
 /***/ },
-/* 74 */
+/* 75 */
 /***/ function(module, exports) {
 
 	module.exports = throttle;
@@ -9374,10 +9478,10 @@
 
 
 /***/ },
-/* 75 */
+/* 76 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var detect = __webpack_require__(1)
+	var detect = __webpack_require__(2)
 	var has3d = detect.has3d
 	var transform = detect.transform
 	
@@ -9434,13 +9538,13 @@
 
 
 /***/ },
-/* 76 */
+/* 77 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Model = __webpack_require__(77)
-	var Reactive = __webpack_require__(15)
-	var domify = __webpack_require__(8)
-	var uid = __webpack_require__(80)
+	var Model = __webpack_require__(78)
+	var Reactive = __webpack_require__(16)
+	var domify = __webpack_require__(9)
+	var uid = __webpack_require__(81)
 	var body = document.body
 	
 	/**
@@ -9951,7 +10055,7 @@
 
 
 /***/ },
-/* 77 */
+/* 78 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -9959,8 +10063,8 @@
 	 * Module dependencies.
 	 */
 	
-	var proto = __webpack_require__(78)
-	var util = __webpack_require__(79)
+	var proto = __webpack_require__(79)
+	var util = __webpack_require__(80)
 	var buildinRe = /^(\$stat|changed|emit|clean|on|off|attrs)$/
 	
 	/**
@@ -10083,7 +10187,7 @@
 
 
 /***/ },
-/* 78 */
+/* 79 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -10091,8 +10195,8 @@
 	 * Module dependencies.
 	 */
 	
-	var Emitter = __webpack_require__(20)
-	var util = __webpack_require__(79)
+	var Emitter = __webpack_require__(21)
+	var util = __webpack_require__(80)
 	
 	/**
 	 * Mixin emitter.
@@ -10175,7 +10279,7 @@
 
 
 /***/ },
-/* 79 */
+/* 80 */
 /***/ function(module, exports) {
 
 	/**
@@ -10214,7 +10318,7 @@
 
 
 /***/ },
-/* 80 */
+/* 81 */
 /***/ function(module, exports) {
 
 	/**
@@ -10237,13 +10341,13 @@
 
 
 /***/ },
-/* 81 */
+/* 82 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var domify = __webpack_require__(8)
-	var debounce = __webpack_require__(82)
-	var template = __webpack_require__(84)
-	var events = __webpack_require__(10)
+	var domify = __webpack_require__(9)
+	var debounce = __webpack_require__(83)
+	var template = __webpack_require__(85)
+	var events = __webpack_require__(11)
 	
 	/**
 	 * Init more with element(for insertAfter), callback ,and scrollable
@@ -10363,7 +10467,7 @@
 
 
 /***/ },
-/* 82 */
+/* 83 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -10371,7 +10475,7 @@
 	 * Module dependencies.
 	 */
 	
-	var now = __webpack_require__(83);
+	var now = __webpack_require__(84);
 	
 	/**
 	 * Returns a function, that, as long as it continues to be invoked, will not
@@ -10422,7 +10526,7 @@
 
 
 /***/ },
-/* 83 */
+/* 84 */
 /***/ function(module, exports) {
 
 	module.exports = Date.now || now
@@ -10433,19 +10537,19 @@
 
 
 /***/ },
-/* 84 */
+/* 85 */
 /***/ function(module, exports) {
 
 	module.exports = "<div class=\"more-loading\">\n  <i class=\"more-refresh more-spin\"></i> <span class=\"more-text\">加载中...</span>\n</div>\n";
 
 /***/ },
-/* 85 */
+/* 86 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var classes = __webpack_require__(27)
-	var domify = __webpack_require__(8)
-	var once = __webpack_require__(86)
-	var template = __webpack_require__(88)
+	var classes = __webpack_require__(28)
+	var domify = __webpack_require__(9)
+	var once = __webpack_require__(87)
+	var template = __webpack_require__(89)
 	
 	var LOADING_TEXT = '加载中...'
 	var PULL_TEXT = '下拉刷新'
@@ -10572,10 +10676,10 @@
 
 
 /***/ },
-/* 86 */
+/* 87 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var wrappy = __webpack_require__(87)
+	var wrappy = __webpack_require__(88)
 	module.exports = wrappy(once)
 	
 	once.proto = once(function () {
@@ -10599,7 +10703,7 @@
 
 
 /***/ },
-/* 87 */
+/* 88 */
 /***/ function(module, exports) {
 
 	// Returns a wrapper function that returns a wrapped callback
@@ -10638,7 +10742,7 @@
 
 
 /***/ },
-/* 88 */
+/* 89 */
 /***/ function(module, exports) {
 
 	module.exports = "<div class=\"ptr_box\">\n  <div class=\"ptr_container\">\n    <div class=\"ptr_image\"></div>\n    <div class=\"ptr_text\">下拉刷新</div>\n  </div>\n</div>\n";

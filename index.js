@@ -1,3 +1,5 @@
+var scrollfix = require('scrollfix')
+scrollfix(document.querySelector('.scrollable'))
 if ('ontouchend' in window) {
   document.querySelector('#list .alert').style.display = 'none'
 }
@@ -34,6 +36,7 @@ var domify = require('domify')
   swipe.delegate('touchstart', '.remove', tap(function () {
     swipe.clear()
   }))
+  window.swipe = swipe
 })()
 
 !(function () {
