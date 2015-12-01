@@ -34,7 +34,8 @@ s.delegate('touchstart', '.remove', tap(function(e, li) {
 ## Events
 
 * `start` emit with swipe element when swipe start
-* `end` emit with swipe element just before swipe stat reset
+* `end` emit with swipe element just before swipe stat reset, could be used for change the transition when remove
+* `remove` emit with swipe element just before remove transition begin, used for change the transition process
 
 ## API
 
@@ -62,9 +63,9 @@ Delegate `handler` of `type` event with matched `selector` within swiped out ele
 
 Reset the swiped element to original stat
 
-### .remove([duration], [ease])
+### .clear([duration], [ease])
 
-Remove the swipe element and related holder with transition specified by `duration` (default 300) in millisecond and `ease` timing function
+Remove the swiped element and related holder with transition specified by `duration` (default 300) in millisecond and `ease` timing function, return promise.
 
 ### .unbind()
 
