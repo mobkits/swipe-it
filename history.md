@@ -1,5 +1,6 @@
 0.1.3
 * improve clear to be always works
+* improve event handler
 
 0.1.2
 * fix transition event not fired when node removed
