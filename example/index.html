@@ -35,7 +35,7 @@
         background-color: #fff;
       }
       .sortable-dragging {
-        z-index: 99;
+        box-shadow: 0px 1px 2px rgba(80,80,80,0.7)
       }
       ul .remove {
         color: #fff;
@@ -67,13 +67,13 @@
   <body>
     <h2>Basic with sortable</h2>
     <ul id="list">
-      <li class="alert">need touch to work</li>
-      <li>Javascript</li>
-      <li>Ruby</li>
-      <li>Python</li>
-      <li>Php</li>
-      <li>Go</li>
-      <li>Rust</li>
+      <li class="alert">need touch to work<span class="handler"></span></li>
+      <li>Javascript<span class="handler"></span></li>
+      <li>Ruby<span class="handler"></span></li>
+      <li>Python<span class="handler"></span></li>
+      <li>Php<span class="handler"></span></li>
+      <li>Go<span class="handler"></span></li>
+      <li>Rust<span class="handler"></span></li>
     </ul>
     <h2>mobile list</h2>
     <ul id="mobile-list">
