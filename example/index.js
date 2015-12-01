@@ -34,6 +34,7 @@ var domify = require('domify')
   swipe.delegate('touchstart', '.remove', tap(function () {
     swipe.clear()
   }))
+  window.swipe = swipe
 })()
 
 !(function () {
