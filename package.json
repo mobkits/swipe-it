@@ -1,6 +1,6 @@
 {
   "name": "swipe-it",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "",
   "main": "lib/index.js",
   "directories": {
@@ -50,7 +50,7 @@
     "model-component": "^1.2.6",
     "stack-source-map": "^1.0.4",
     "style-loader": "^0.13.0",
-    "sweet-sortable": "^0.1.9",
+    "sweet-sortable": "^0.1.10",
     "url-loader": "^0.5.6",
     "webpack": "^1.12.6",
     "webpack-dev-server": "^1.12.1"
@@ -66,7 +66,8 @@
     "computed-style": "^0.3.0",
     "domify": "^1.4.0",
     "prop-detect": "^1.0.0",
-    "reactive-lite": "^0.5.4"
+    "reactive-lite": "^0.5.4",
+    "sweet-sortable": "^0.1.13"
   },
   "browser": {
     "events": "component-events",
