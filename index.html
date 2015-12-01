@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, width=device-width, height=device-height"/>
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, width=device-width"/>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
@@ -11,46 +11,81 @@
     <link rel="stylesheet" href="./common.css" type="text/css" media="all" />
     <style type="text/css" media="screen">
       body {
-        font: 13px / 1.4 Helvetica
-        padding: 80px;
+        font: 13px / 1.4 Helvetica;
+        padding: 30px;
       }
       #code > pre {
         background:#fdf6e3
       }
-      #list {
+      ul {
         padding: 10px;
         margin: 0px;
         list-style: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
       }
-      #list > li {
+      ul > li {
+        position: relative;
         padding: 5px;
         margin: 0px;
-        height: 50px;
+        line-height: 50px;
         border-bottom: 1px solid #ccc;
         background-color: #fff;
       }
-      #list .remove {
+      .sortable-dragging {
+        box-shadow: 0px 1px 2px rgba(80,80,80,0.7)
+      }
+      ul .remove {
         color: #fff;
+        width: 60px;
         padding: 5px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         background-color: tomato;
       }
-      #list .alert {
-        color: tomato;
+      ul .alert {
+        color: #e33;
+      }
+      li span.handler {
+        font-size: 25px;
+        position: absolute;
+        top: 5px;
+        right: 0px;
+        display: block;
+        width: 40px;
+        text-align: center;
+      }
+
+      li span.handler:before {
+        content: '≡';
       }
     </style>
   </head>
   <body>
+    <h2>Basic with sortable</h2>
     <ul id="list">
-      <li class="alert">need touch to work</li>
-      <li>1</li>
-      <li>2</li>
-      <li>3</li>
-      <li>4</li>
-      <li>5</li>
-      <li>6</li>
+      <li class="alert">need touch to work<span class="handler"></span></li>
+      <li>Javascript<span class="handler"></span></li>
+      <li>Ruby<span class="handler"></span></li>
+      <li>Python<span class="handler"></span></li>
+      <li>Php<span class="handler"></span></li>
+      <li>Go<span class="handler"></span></li>
+      <li>Rust<span class="handler"></span></li>
+    </ul>
+    <h2>mobile list</h2>
+    <ul id="mobile-list">
+    </ul>
+    <h2>Render function</h2>
+    <ul id="render">
+      <li>Javascript<span class="handler"></span></li>
+      <li>Ruby<span class="handler"></span></li>
+      <li>Python<span class="handler"></span></li>
+      <li>Php<span class="handler"></span></li>
+      <li>Go<span class="handler"></span></li>
+      <li>Rust<span class="handler"></span></li>
     </ul>
     <script src="./bundle.js" type="text/javascript" charset="utf-8"></script>
   </body>

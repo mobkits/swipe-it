@@ -47,40 +47,260 @@
 	if ('ontouchend' in window) {
 	  document.querySelector('#list .alert').style.display = 'none'
 	}
-	var SwipeIt = __webpack_require__(1)
-	var tap = __webpack_require__(57)
+	var detect = __webpack_require__(1)
+	var transform = detect.transform
+	var SwipeIt = __webpack_require__(7)
+	var tap = __webpack_require__(54)
+	var Sortable = __webpack_require__(55)
 	
-	var template = '<div class="remove">删除</div>'
-	var list = document.getElementById('list')
+	!(function () {
+	  function hide(el) {
+	    el.style.display = 'none'
+	  }
+	  function show(el) {
+	    el.style.display = 'block'
+	  }
+	  var template = '<div class="remove">删除</div>'
+	  var list = document.getElementById('list')
+	  // before swipe-it
+	  var sortable = new Sortable(list)
+	  sortable.handle('.handler')
+	  sortable.bind('li')
+	  //sortable.ignore('.swipe-dragging')
 	
+	  var swipe = SwipeIt(template)
+	  swipe.bind(list, 'li')
+	  swipe.on('start', function (el) {
+	    hide(el.querySelector('.handler'))
+	  })
+	  swipe.on('end', function (el) {
+	    show(el.querySelector('.handler'))
+	  })
+	  swipe.delegate('touchstart', '.remove', tap(function () {
+	    swipe.clear()
+	  }))
+	})()
+	
+	!(function () {
+	var data = [{
+	  index: 1,
+	  language: 'javascript'
+	}, {
+	  index: 2,
+	  language: 'Ruby'
+	}, {
+	  index: 3,
+	  language: 'Python'
+	}, {
+	  index: 4,
+	  language: 'Php'
+	}, {
+	  index: 5,
+	  language: 'Go'
+	}, {
+	  index: 6,
+	  language: 'Rust'
+	}]
+	var List = __webpack_require__(68)
+	var tmpl = '<li>{language}</li>'
+	var colors = ['tomato', 'gold', 'lightgreen', 'deepskyblue', 'orange', 'violet']
+	var list = new List(tmpl, window, {
+	  selector: '#mobile-list',
+	  delegate: {
+	    remove: tap(function (e, model) {
+	      swipe.clear()
+	    })
+	  },
+	  bindings: {
+	    'data-color': function (prop) {
+	      this.bind(prop, function (model, el) {
+	        var color = colors[model[prop] - 1]
+	        el.style.backgroundColor = color
+	      })
+	    }
+	  }
+	})
+	list.setData(data)
+	
+	var template = '<div class="remove" data-color="index" on-touchstart="remove">删除</div>'
 	var swipe = SwipeIt(template)
 	swipe.bind(list, 'li')
-	swipe.on('start', function (el) {
+	// slide up
+	swipe.on('remove', function (el) {
+	  //el.style.zIndex = 'aoto'
+	  el.style[transform] = 'translateX(' + swipe.x + 'px) translateY(-100%)'
 	})
-	swipe.on('end', function (el) {
-	})
-	swipe.delegate('touchstart', '.remove', tap(function (e, el) {
-	  el.parentNode.removeChild(el)
-	  swipe.removeHolder()
-	}))
+	})()
 
 
 /***/ },
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var domify = __webpack_require__(2)
-	var events = __webpack_require__(3)
-	var reactive = __webpack_require__(9)
-	var Tween = __webpack_require__(17)
+	exports.transition = __webpack_require__(2)
+	
+	exports.transform = __webpack_require__(3)
+	
+	exports.touchAction = __webpack_require__(4)
+	
+	exports.transitionend = __webpack_require__(5)
+	
+	exports.has3d = __webpack_require__(6)
+
+
+/***/ },
+/* 2 */
+/***/ function(module, exports) {
+
+	var styles = [
+	  'transition',
+	  'webkitTransition',
+	  'MozTransition',
+	  'OTransition',
+	  'msTransition'
+	]
+	
+	var el = document.createElement('p')
+	var style
+	
+	for (var i = 0; i < styles.length; i++) {
+	  if (null != el.style[styles[i]]) {
+	    style = styles[i]
+	    break
+	  }
+	}
+	el = null
+	
+	module.exports = style
+
+
+/***/ },
+/* 3 */
+/***/ function(module, exports) {
+
+	
+	var styles = [
+	  'webkitTransform',
+	  'MozTransform',
+	  'msTransform',
+	  'OTransform',
+	  'transform'
+	];
+	
+	var el = document.createElement('p');
+	var style;
+	
+	for (var i = 0; i < styles.length; i++) {
+	  style = styles[i];
+	  if (null != el.style[style]) {
+	    module.exports = style;
+	    break;
+	  }
+	}
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	
+	/**
+	 * Module exports.
+	 */
+	
+	module.exports = touchActionProperty();
+	
+	/**
+	 * Returns "touchAction", "msTouchAction", or null.
+	 */
+	
+	function touchActionProperty(doc) {
+	  if (!doc) doc = document;
+	  var div = doc.createElement('div');
+	  var prop = null;
+	  if ('touchAction' in div.style) prop = 'touchAction';
+	  else if ('msTouchAction' in div.style) prop = 'msTouchAction';
+	  div = null;
+	  return prop;
+	}
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports) {
+
+	/**
+	 * Transition-end mapping
+	 */
+	
+	var map = {
+	  'WebkitTransition' : 'webkitTransitionEnd',
+	  'MozTransition' : 'transitionend',
+	  'OTransition' : 'oTransitionEnd',
+	  'msTransition' : 'MSTransitionEnd',
+	  'transition' : 'transitionend'
+	};
+	
+	/**
+	 * Expose `transitionend`
+	 */
+	
+	var el = document.createElement('p');
+	
+	for (var transition in map) {
+	  if (null != el.style[transition]) {
+	    module.exports = map[transition];
+	    break;
+	  }
+	}
+
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var prop = __webpack_require__(3);
+	
+	// IE <=8 doesn't have `getComputedStyle`
+	if (!prop || !window.getComputedStyle) {
+	  module.exports = false;
+	
+	} else {
+	  var map = {
+	    webkitTransform: '-webkit-transform',
+	    OTransform: '-o-transform',
+	    msTransform: '-ms-transform',
+	    MozTransform: '-moz-transform',
+	    transform: 'transform'
+	  };
+	
+	  // from: https://gist.github.com/lorenzopolidori/3794226
+	  var el = document.createElement('div');
+	  el.style[prop] = 'translate3d(1px,1px,1px)';
+	  document.body.insertBefore(el, null);
+	  var val = getComputedStyle(el).getPropertyValue(map[prop]);
+	  document.body.removeChild(el);
+	  module.exports = null != val && val.length && 'none' != val;
+	}
+
+
+/***/ },
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var domify = __webpack_require__(8)
+	var events = __webpack_require__(9)
+	var Reactive = __webpack_require__(15)
+	var Tween = __webpack_require__(22)
 	var doc = document.documentElement
-	var styles = __webpack_require__(22)
-	var classes = __webpack_require__(23)
-	var raf = __webpack_require__(25)
-	var uid = __webpack_require__(26)
-	var event = __webpack_require__(4)
-	var detect = __webpack_require__(50)
-	var Emitter = __webpack_require__(56)
+	var styles = __webpack_require__(26)
+	var classes = __webpack_require__(27)
+	var raf = __webpack_require__(29)
+	var uid = __webpack_require__(30)
+	var event = __webpack_require__(10)
+	var Emitter = __webpack_require__(20)
+	var detect = __webpack_require__(1)
 	var transform = detect.transform
 	var transition = detect.transition
 	var transitionend = detect.transitionend
@@ -123,6 +343,7 @@
 	 */
 	SwipeIt.prototype.bind = function (list, selector) {
 	  this.list = list
+	  var parentNode
 	  if (Array.isArray(list.reactives)) {
 	    this.reactiveOpts = {}
 	    copy(this.reactiveOpts, {
@@ -130,13 +351,17 @@
 	      bindings: list.bindings,
 	      filters: list.filters
 	    })
+	    parentNode = list.parentNode
+	  } else {
+	    parentNode = list
 	  }
 	  this.selector = selector
-	  this.events = events(list, this)
+	  this.events = events(parentNode, this)
 	  this.docEvent = events(document, this)
 	  this.events.bind('touchstart ' + selector)
 	  this.events.bind('touchmove ' + selector)
-	  this.docEvent.bind('touchend ' + selector)
+	  this.events.bind('touchend ' + selector)
+	  this.docEvent.bind('touchend')
 	}
 	
 	/**
@@ -144,24 +369,25 @@
 	 * @private
 	 */
 	SwipeIt.prototype.ontouchstart = function (e) {
-	  if (this.stat === 'reseting') return
-	  if (this.tween) this.tween.stop()
 	  var el = e.delegateTarget
-	  if (isHolder(el)) return
+	  if (this.stat === 'reseting' || el === this.holder) return
+	  if (this.tween) this.tween.stop()
+	  // already moved
+	  var moved = this.x !== 0
+	  if (moved && el === this.swipeEl) return this.reset()
+	  if (moved) return this.reset('out-quad', 100)
+	  // do nothing if handled
+	  if (e.defaultPrevented) return
 	  var touch = this.getTouch(e)
 	  this.dx = 0
 	  this.ts = Date.now()
-	  this.pageX = touch.pageX
+	  this.clientX = touch.clientX
 	  this.down = {
-	    x: touch.pageX,
-	    y: touch.pageY,
+	    x: touch.clientX,
+	    y: touch.clientY,
 	    start: this.x,
 	    at: this.ts
 	  }
-	  // already moved
-	  if (this.x !== 0 && this.swipeEl === el) return
-	  // another element have moved
-	  if (this.x !== 0) return this.reset()
 	  this.swipeEl = el
 	  this.onstart = function () {
 	    // only called once on move
@@ -186,11 +412,12 @@
 	      var model = this.list.findModel(el)
 	      if (!model) throw new Error('no model find at ListRender with [' + el.outerHTML + ']')
 	      if (!this.reactive) {
-	        this.reactive = reactive(templateEl, model, opts)
+	        this.reactive = new Reactive(templateEl, model, opts)
 	      } else {
 	        this.reactive.bind(model)
 	      }
 	    }
+	    this.min = - templateEl.clientWidth - 20
 	    this.emit('start', el)
 	  }
 	}
@@ -200,26 +427,23 @@
 	 * @private
 	 */
 	SwipeIt.prototype.ontouchmove = function (e) {
-	  if (isHolder(e.delegateTarget)) return
-	  if (this.stat === 'reseting') return
-	  if (!this.down) return
-	  e.preventDefault()
+	  if (this.stat === 'reseting' || !this.down) return
 	  var touch = this.getTouch(e)
-	  var dx = touch.pageX - this.down.x
-	  var dy = touch.pageY - this.down.y
+	  var dx = touch.clientX - this.down.x
+	  var dy = touch.clientY - this.down.y
 	  // moving up and down
 	  if (Math.abs(dx/dy) < 1) return
 	  if (this.tween) this.tween.stop()
 	  if (this.onstart) this.onstart()
 	  this.moving = true
-	  if (!this.pageX) this.pageX = touch.pageX
+	  var cx = touch.clientX
+	  this.clientX = this.clientX || cx
 	  //calculate speed every 100 milisecond
-	  this.calcuteSpeed(touch.pageX)
+	  this.calcuteSpeed(cx)
 	  var x = this.down.start + dx
-	  var w = this.templateEl.clientWidth
 	  x = Math.min(0, x)
-	  // overlap 8px
-	  x = Math.max(x, -w - 10)
+	  x = Math.max(x, this.min)
+	  if (x !== 0) e.preventDefault()
 	  this.translate(x)
 	}
 	
@@ -228,16 +452,17 @@
 	 * @private
 	 */
 	SwipeIt.prototype.ontouchend = function (e) {
-	  if (isHolder(e.delegateTarget)) return
+	  this.onstart = null
 	  if (this.stat === 'reseting') return
+	  var target = e.delegateTarget
+	  if (target && isHolder(target)) return
 	  if (!this.down || !this.moving) return
-	  var touch = this.getTouch(e)
-	  this.calcuteSpeed(touch.pageX)
-	  var m = this.momentum()
 	  this.moving = false
+	  var touch = this.getTouch(e)
+	  this.calcuteSpeed(touch.clientX)
+	  var m = this.momentum()
 	  if (!m) return this.reset()
-	  if (!m.x || m.x === 0) return this.reset(m.ease, m.duration)
-	  this.down = null
+	  if (!m.x) return this.reset(m.ease, m.duration)
 	  this.animate(m.x, m.ease, m.duration).catch(function () {
 	  })
 	}
@@ -312,10 +537,10 @@
 	    this.distance = x - this.down.x
 	    this.speed = Math.abs(this.distance/dt)
 	  } else if(dt > 100){
-	    this.distance = x - this.pageX
+	    this.distance = x - this.clientX
 	    this.speed = Math.abs(this.distance/dt)
 	    this.ts = ts
-	    this.pageX = x
+	    this.clientX = x
 	  }
 	}
 	
@@ -391,25 +616,39 @@
 	  var holder = this.holder
 	  var el = this.swipeEl
 	  if (!el || !holder) return
+	  this.stat = 'reseting'
 	  this.unbindEvents()
 	  this.emit('end', el)
-	  this.stat = 'reseting'
-	  if (this.x === 0) {
-	    reset.call(this)
-	  } else {
-	    var promise = this.animate(0, ease, duration)
-	    promise.then(reset.bind(this), reset.bind(this))
-	  }
-	  function reset() {
-	    // restore to original stat
-	    holder.parentNode.removeChild(holder)
-	    classes(el).remove('swipe-dragging')
-	    copy(el.style, this.orig)
-	    // improve performance
-	    el.style[transform] = 'none'
-	    this.holder = this.swipeEl = null
-	    this.stat = null
-	  }
+	  var self = this
+	  var promise = new Promise(function (resolve) {
+	    if (self.x === 0) {
+	      reset()
+	    } else {
+	      var promise = self.animate(0, ease, duration)
+	      promise.then(reset, reset)
+	    }
+	    function reset() {
+	      // restore to original stat
+	      classes(el).remove('swipe-dragging')
+	      // improve performance
+	      el.style[transform] = 'none'
+	      // wait
+	      var trans = holder.style[transition]
+	      var end = function () {
+	        if (trans) event.unbind(holder, transitionend, end)
+	        copy(el.style, self.orig)
+	        holder.parentNode.removeChild(holder)
+	        self.stat = self.holder = self.swipeEl = null
+	        resolve()
+	      }
+	      if (trans) {
+	        event.bind(holder, transitionend, end)
+	      } else {
+	        end()
+	      }
+	    }
+	  })
+	  return promise
 	}
 	
 	/**
@@ -422,7 +661,7 @@
 	 */
 	SwipeIt.prototype.animate = function (x, ease, duration) {
 	  ease = ease || 'out-quad'
-	  duration = duration || 300
+	  duration = duration || 350
 	  var tween = this.tween = Tween({x : this.x})
 	  .ease(ease)
 	  .to({x : x})
@@ -456,32 +695,56 @@
 	}
 	
 	/**
-	 * Remove holder element with transtion
+	 * Remove the swiped element and related holder with transition specified by `duration` (default 300) in millisecond and `ease` timing function
 	 *
 	 * @public
 	 * @param {Number} duration
 	 * @param {String} ease
 	 * @return {promise}
 	 */
-	SwipeIt.prototype.removeHolder = function (duration, ease) {
+	SwipeIt.prototype.clear = function (duration, ease) {
 	  if (this.stat === 'reseting') return
+	  this.stat = 'reseting'
 	  var el = this.holder
-	  duration = duration || '300ms'
+	  duration = duration || 300
 	  ease = ease || 'ease-out'
-	  el.style[transition] = 'height ' + duration + ' ' + ease
+	  var sel = this.swipeEl
+	  copy(sel.style, {
+	    transition: 'all ' + duration + 'ms ' + ease,
+	    transformOrigin: '0% 0%',
+	    webkitTransformOriginY: '0%',
+	    opacity: 0
+	  })
+	  var trans_prop = sel.style[transform]
+	  sel.style[transform] = trans_prop + ' rotateX(90deg)'
+	  el.style[transition] = 'height ' + duration + 'ms ' + ease
 	  this.down = null
 	  this.unbindEvents()
-	  this.emit('end', this.swipeEl)
+	  this.emit('remove', sel)
+	  this.emit('end', sel)
 	  if (!el) return
 	  var self = this
-	  var promise = new Promise(function (resolve) {
+	  var promise = new Promise(function (resolve, reject) {
+	    var succeed
 	    var end = function () {
 	      event.unbind(el, transitionend, end)
 	      el.parentNode.removeChild(el)
-	      self.holder = self.swipeEl = null
+	      if (self.reactive) {
+	        self.reactive.model.remove()
+	      } else {
+	        sel.parentNode.removeChild(sel)
+	      }
+	      self.stat = self.holder = self.swipeEl = null
 	      self.x = 0
+	      succeed = true
 	      resolve()
 	    }
+	    setTimeout(function () {
+	      if (!succeed) {
+	        reject(new Error('Transitionend event not fired'))
+	        end()
+	      }
+	    }, duration)
 	    event.bind(el, transitionend, end)
 	    el.style.height = '0px'
 	  })
@@ -498,6 +761,7 @@
 	  this.unbindEvents()
 	  this.events.unbind()
 	  this.docEvent.unbind()
+	  if (this.reactive) this.reactive.remove()
 	}
 	
 	function isHolder(el) {
@@ -510,15 +774,18 @@
 	  classes(node).add('swipe-holder')
 	  var styleObj = getComputedStyle(el)
 	  var bh = parseInt(styleObj['border-top-width'], 10) + parseInt(styleObj['border-bottom-width'], 10)
+	  var w = el.style.width
 	  copy(node.style, {
+	    borderWidth: '0px',
 	    overflow: 'hidden',
 	    zIndex: 0,
 	    transform: 'none',
 	    position: 'relative',
 	    backgroundColor: 'rgba(255,255,255,0)',
 	    height: (el.clientHeight + bh) + 'px',
-	    width: el.clientWidth + 'px'
+	    width: w
 	  })
+	  if (w) node.style.width = w
 	  return node
 	}
 	
@@ -532,7 +799,6 @@
 	function makeAbsolute(el, pel) {
 	  var pos = getAbsolutePosition(el, pel)
 	  var orig = copy(el.style, {
-	    zIndex: 999,
 	    height: pos.height + 'px',
 	    width: pos.width + 'px',
 	    left: pos.left + 'px',
@@ -570,12 +836,12 @@
 	 */
 	function getRelativeElement (el) {
 	  do {
+	    el = el.parentNode
 	    if (el === doc) return el
 	    var p = styles(el, 'position')
 	    if (p === 'absolute' || p === 'fixed' || p === 'relative') {
-	      return p
+	      return el
 	    }
-	    el = el.parentNode
 	  } while(el)
 	}
 	
@@ -601,7 +867,7 @@
 
 
 /***/ },
-/* 2 */
+/* 8 */
 /***/ function(module, exports) {
 
 	
@@ -719,7 +985,7 @@
 
 
 /***/ },
-/* 3 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -727,8 +993,8 @@
 	 * Module dependencies.
 	 */
 	
-	var events = __webpack_require__(4);
-	var delegate = __webpack_require__(5);
+	var events = __webpack_require__(10);
+	var delegate = __webpack_require__(11);
 	
 	/**
 	 * Expose `Events`.
@@ -901,7 +1167,7 @@
 
 
 /***/ },
-/* 4 */
+/* 10 */
 /***/ function(module, exports) {
 
 	var bind = window.addEventListener ? 'addEventListener' : 'attachEvent',
@@ -941,15 +1207,15 @@
 	};
 
 /***/ },
-/* 5 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module dependencies.
 	 */
 	
-	var closest = __webpack_require__(6)
-	  , event = __webpack_require__(4);
+	var closest = __webpack_require__(12)
+	  , event = __webpack_require__(10);
 	
 	/**
 	 * Delegate event `type` to `selector`
@@ -989,14 +1255,14 @@
 
 
 /***/ },
-/* 6 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module Dependencies
 	 */
 	
-	var matches = __webpack_require__(7)
+	var matches = __webpack_require__(13)
 	
 	/**
 	 * Export `closest`
@@ -1027,14 +1293,14 @@
 
 
 /***/ },
-/* 7 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module dependencies.
 	 */
 	
-	var query = __webpack_require__(8);
+	var query = __webpack_require__(14);
 	
 	/**
 	 * Element prototype.
@@ -1079,7 +1345,7 @@
 
 
 /***/ },
-/* 8 */
+/* 14 */
 /***/ function(module, exports) {
 
 	function one(selector, el) {
@@ -1106,15 +1372,16 @@
 
 
 /***/ },
-/* 9 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var util = __webpack_require__(10)
-	var domify = __webpack_require__(12)
-	var Binding = __webpack_require__(13)
-	var bindings = __webpack_require__(14)
-	var Emitter = __webpack_require__(15)
-	var filters = __webpack_require__(16)
+	var util = __webpack_require__(16)
+	var domify = __webpack_require__(8)
+	var Binding = __webpack_require__(18)
+	var bindings = __webpack_require__(19)
+	var Emitter = __webpack_require__(20)
+	var filters = __webpack_require__(21)
+	var event = __webpack_require__(10)
 	
 	/**
 	 * Reactive
@@ -1138,6 +1405,7 @@
 	  this.delegate = option.delegate || {}
 	  this.model = model
 	  this.el = el
+	  this.events = []
 	  if (option.nobind) return
 	  var config = option.config
 	  this.config = config ? config : this.generateConfig()
@@ -1156,10 +1424,24 @@
 	  if (this._removed) return
 	  if (this.el.parentNode) this.el.parentNode.removeChild(this.el)
 	  this._removed = true
+	  this.unbindEvents()
 	  this.emit('remove')
 	  // The model may still using, not destroy it
 	  this.model = null
 	  this.off()
+	}
+	
+	/**
+	 * Unbind event handlers
+	 *
+	 * @public
+	 * @return {undefined}
+	 */
+	Reactive.prototype.unbindEvents = function () {
+	  this.events.forEach(function (o) {
+	    event.unbind(o.el, o.name, o.handler)
+	  })
+	  this.events = []
 	}
 	
 	/**
@@ -1168,13 +1450,13 @@
 	 * @param {Array} config
 	 * @api private
 	 */
-	Reactive.prototype._bindConfig = function () {
+	Reactive.prototype._bindConfig = function (noEvent) {
 	  var root = this.el
 	  var reactive = this
 	  this.config.forEach(function (o) {
 	    var el = util.findElement(root, o.indexes)
 	    var binding = new Binding(reactive, el, o.bindings)
-	    binding.active(el)
+	    binding.active(el, noEvent)
 	    reactive.on('remove', function () {
 	      binding.remove()
 	    })
@@ -1269,13 +1551,14 @@
 	}
 	
 	/**
-	 * Bind a new model
+	 * Bind new model, exist event handlers would be removed
 	 *
 	 * @param {Object} model
 	 * @api public
 	 */
 	Reactive.prototype.bind = function (model) {
 	  this.model = model
+	  this.unbindEvents()
 	  this._bindConfig()
 	}
 	
@@ -1346,10 +1629,10 @@
 
 
 /***/ },
-/* 10 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var unique = __webpack_require__(11)
+	var unique = __webpack_require__(17)
 	var funcRe = /\([^\s]*\)$/
 	
 	/**
@@ -1614,7 +1897,7 @@
 
 
 /***/ },
-/* 11 */
+/* 17 */
 /***/ function(module, exports) {
 
 	/*!
@@ -1648,129 +1931,11 @@
 
 
 /***/ },
-/* 12 */
-/***/ function(module, exports) {
-
-	
-	/**
-	 * Expose `parse`.
-	 */
-	
-	module.exports = parse;
-	
-	/**
-	 * Tests for browser support.
-	 */
-	
-	var innerHTMLBug = false;
-	var bugTestDiv;
-	if (typeof document !== 'undefined') {
-	  bugTestDiv = document.createElement('div');
-	  // Setup
-	  bugTestDiv.innerHTML = '  <link/><table></table><a href="/a">a</a><input type="checkbox"/>';
-	  // Make sure that link elements get serialized correctly by innerHTML
-	  // This requires a wrapper element in IE
-	  innerHTMLBug = !bugTestDiv.getElementsByTagName('link').length;
-	  bugTestDiv = undefined;
-	}
-	
-	/**
-	 * Wrap map from jquery.
-	 */
-	
-	var map = {
-	  legend: [1, '<fieldset>', '</fieldset>'],
-	  tr: [2, '<table><tbody>', '</tbody></table>'],
-	  col: [2, '<table><tbody></tbody><colgroup>', '</colgroup></table>'],
-	  // for script/link/style tags to work in IE6-8, you have to wrap
-	  // in a div with a non-whitespace character in front, ha!
-	  _default: innerHTMLBug ? [1, 'X<div>', '</div>'] : [0, '', '']
-	};
-	
-	map.td =
-	map.th = [3, '<table><tbody><tr>', '</tr></tbody></table>'];
-	
-	map.option =
-	map.optgroup = [1, '<select multiple="multiple">', '</select>'];
-	
-	map.thead =
-	map.tbody =
-	map.colgroup =
-	map.caption =
-	map.tfoot = [1, '<table>', '</table>'];
-	
-	map.polyline =
-	map.ellipse =
-	map.polygon =
-	map.circle =
-	map.text =
-	map.line =
-	map.path =
-	map.rect =
-	map.g = [1, '<svg xmlns="http://www.w3.org/2000/svg" version="1.1">','</svg>'];
-	
-	/**
-	 * Parse `html` and return a DOM Node instance, which could be a TextNode,
-	 * HTML DOM Node of some kind (<div> for example), or a DocumentFragment
-	 * instance, depending on the contents of the `html` string.
-	 *
-	 * @param {String} html - HTML string to "domify"
-	 * @param {Document} doc - The `document` instance to create the Node for
-	 * @return {DOMNode} the TextNode, DOM Node, or DocumentFragment instance
-	 * @api private
-	 */
-	
-	function parse(html, doc) {
-	  if ('string' != typeof html) throw new TypeError('String expected');
-	
-	  // default to the global `document` object
-	  if (!doc) doc = document;
-	
-	  // tag name
-	  var m = /<([\w:]+)/.exec(html);
-	  if (!m) return doc.createTextNode(html);
-	
-	  html = html.replace(/^\s+|\s+$/g, ''); // Remove leading/trailing whitespace
-	
-	  var tag = m[1];
-	
-	  // body support
-	  if (tag == 'body') {
-	    var el = doc.createElement('html');
-	    el.innerHTML = html;
-	    return el.removeChild(el.lastChild);
-	  }
-	
-	  // wrap map
-	  var wrap = map[tag] || map._default;
-	  var depth = wrap[0];
-	  var prefix = wrap[1];
-	  var suffix = wrap[2];
-	  var el = doc.createElement('div');
-	  el.innerHTML = prefix + html + suffix;
-	  while (depth--) el = el.lastChild;
-	
-	  // one element
-	  if (el.firstChild == el.lastChild) {
-	    return el.removeChild(el.firstChild);
-	  }
-	
-	  // several elements
-	  var fragment = doc.createDocumentFragment();
-	  while (el.firstChild) {
-	    fragment.appendChild(el.removeChild(el.firstChild));
-	  }
-	
-	  return fragment;
-	}
-
-
-/***/ },
-/* 13 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var unique = __webpack_require__(11)
-	var util = __webpack_require__(10)
+	var unique = __webpack_require__(17)
+	var util = __webpack_require__(16)
 	
 	/**
 	 * Create binding instance with reactive and el
@@ -1934,11 +2099,11 @@
 
 
 /***/ },
-/* 14 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var util = __webpack_require__(10)
-	var event = __webpack_require__(4)
+	var util = __webpack_require__(16)
+	var event = __webpack_require__(10)
 	
 	/**
 	 * Attributes supported.
@@ -2049,8 +2214,10 @@
 	        fn.call(context, e, model, el)
 	      }
 	      event.bind(el, name, handler)
-	      this._reactive.on('remove', function () {
-	        event.unbind(el, name, handler)
+	      this._reactive.events.push({
+	        el: el,
+	        name: name,
+	        handler: handler
 	      })
 	    }
 	  }
@@ -2110,7 +2277,7 @@
 
 
 /***/ },
-/* 15 */
+/* 20 */
 /***/ function(module, exports) {
 
 	
@@ -2277,7 +2444,7 @@
 
 
 /***/ },
-/* 16 */
+/* 21 */
 /***/ function(module, exports) {
 
 	/**
@@ -2369,7 +2536,7 @@
 
 
 /***/ },
-/* 17 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -2377,10 +2544,10 @@
 	 * Module dependencies.
 	 */
 	
-	var Emitter = __webpack_require__(18);
-	var clone = __webpack_require__(19);
-	var type = __webpack_require__(20);
-	var ease = __webpack_require__(21);
+	var Emitter = __webpack_require__(20);
+	var clone = __webpack_require__(23);
+	var type = __webpack_require__(24);
+	var ease = __webpack_require__(25);
 	
 	/**
 	 * Expose `Tween`.
@@ -2552,174 +2719,7 @@
 	};
 
 /***/ },
-/* 18 */
-/***/ function(module, exports) {
-
-	
-	/**
-	 * Expose `Emitter`.
-	 */
-	
-	module.exports = Emitter;
-	
-	/**
-	 * Initialize a new `Emitter`.
-	 *
-	 * @api public
-	 */
-	
-	function Emitter(obj) {
-	  if (obj) return mixin(obj);
-	};
-	
-	/**
-	 * Mixin the emitter properties.
-	 *
-	 * @param {Object} obj
-	 * @return {Object}
-	 * @api private
-	 */
-	
-	function mixin(obj) {
-	  for (var key in Emitter.prototype) {
-	    obj[key] = Emitter.prototype[key];
-	  }
-	  return obj;
-	}
-	
-	/**
-	 * Listen on the given `event` with `fn`.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-	
-	Emitter.prototype.on =
-	Emitter.prototype.addEventListener = function(event, fn){
-	  this._callbacks = this._callbacks || {};
-	  (this._callbacks['$' + event] = this._callbacks['$' + event] || [])
-	    .push(fn);
-	  return this;
-	};
-	
-	/**
-	 * Adds an `event` listener that will be invoked a single
-	 * time then automatically removed.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-	
-	Emitter.prototype.once = function(event, fn){
-	  function on() {
-	    this.off(event, on);
-	    fn.apply(this, arguments);
-	  }
-	
-	  on.fn = fn;
-	  this.on(event, on);
-	  return this;
-	};
-	
-	/**
-	 * Remove the given callback for `event` or all
-	 * registered callbacks.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-	
-	Emitter.prototype.off =
-	Emitter.prototype.removeListener =
-	Emitter.prototype.removeAllListeners =
-	Emitter.prototype.removeEventListener = function(event, fn){
-	  this._callbacks = this._callbacks || {};
-	
-	  // all
-	  if (0 == arguments.length) {
-	    this._callbacks = {};
-	    return this;
-	  }
-	
-	  // specific event
-	  var callbacks = this._callbacks['$' + event];
-	  if (!callbacks) return this;
-	
-	  // remove all handlers
-	  if (1 == arguments.length) {
-	    delete this._callbacks['$' + event];
-	    return this;
-	  }
-	
-	  // remove specific handler
-	  var cb;
-	  for (var i = 0; i < callbacks.length; i++) {
-	    cb = callbacks[i];
-	    if (cb === fn || cb.fn === fn) {
-	      callbacks.splice(i, 1);
-	      break;
-	    }
-	  }
-	  return this;
-	};
-	
-	/**
-	 * Emit `event` with the given args.
-	 *
-	 * @param {String} event
-	 * @param {Mixed} ...
-	 * @return {Emitter}
-	 */
-	
-	Emitter.prototype.emit = function(event){
-	  this._callbacks = this._callbacks || {};
-	  var args = [].slice.call(arguments, 1)
-	    , callbacks = this._callbacks['$' + event];
-	
-	  if (callbacks) {
-	    callbacks = callbacks.slice(0);
-	    for (var i = 0, len = callbacks.length; i < len; ++i) {
-	      callbacks[i].apply(this, args);
-	    }
-	  }
-	
-	  return this;
-	};
-	
-	/**
-	 * Return array of callbacks for `event`.
-	 *
-	 * @param {String} event
-	 * @return {Array}
-	 * @api public
-	 */
-	
-	Emitter.prototype.listeners = function(event){
-	  this._callbacks = this._callbacks || {};
-	  return this._callbacks['$' + event] || [];
-	};
-	
-	/**
-	 * Check if this emitter has `event` handlers.
-	 *
-	 * @param {String} event
-	 * @return {Boolean}
-	 * @api public
-	 */
-	
-	Emitter.prototype.hasListeners = function(event){
-	  return !! this.listeners(event).length;
-	};
-
-
-/***/ },
-/* 19 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -2728,9 +2728,9 @@
 	
 	var type;
 	try {
-	  type = __webpack_require__(20);
+	  type = __webpack_require__(24);
 	} catch (_) {
-	  type = __webpack_require__(20);
+	  type = __webpack_require__(24);
 	}
 	
 	/**
@@ -2782,7 +2782,7 @@
 
 
 /***/ },
-/* 20 */
+/* 24 */
 /***/ function(module, exports) {
 
 	/**
@@ -2822,7 +2822,7 @@
 
 
 /***/ },
-/* 21 */
+/* 25 */
 /***/ function(module, exports) {
 
 	
@@ -2998,7 +2998,7 @@
 
 
 /***/ },
-/* 22 */
+/* 26 */
 /***/ function(module, exports) {
 
 	// DEV: We don't use var but favor parameters since these play nicer with minification
@@ -3031,14 +3031,14 @@
 
 
 /***/ },
-/* 23 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module dependencies.
 	 */
 	
-	var index = __webpack_require__(24);
+	var index = __webpack_require__(28);
 	
 	/**
 	 * Whitespace regexp.
@@ -3224,7 +3224,7 @@
 
 
 /***/ },
-/* 24 */
+/* 28 */
 /***/ function(module, exports) {
 
 	module.exports = function(arr, obj){
@@ -3236,7 +3236,7 @@
 	};
 
 /***/ },
-/* 25 */
+/* 29 */
 /***/ function(module, exports) {
 
 	/**
@@ -3276,7 +3276,7 @@
 
 
 /***/ },
-/* 26 */
+/* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -3323,7 +3323,7 @@
 	      return tostr(a);
 	    }
 	  } else {
-	    var crypto = __webpack_require__(27); // avoid browserify polyfill
+	    var crypto = __webpack_require__(31); // avoid browserify polyfill
 	    try {
 	      return tostr(crypto.randomBytes(length));
 	    } catch (e) {
@@ -3341,10 +3341,10 @@
 
 
 /***/ },
-/* 27 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(Buffer) {var rng = __webpack_require__(32)
+	/* WEBPACK VAR INJECTION */(function(Buffer) {var rng = __webpack_require__(36)
 	
 	function error () {
 	  var m = [].slice.call(arguments).join(' ')
@@ -3355,9 +3355,9 @@
 	    ].join('\n'))
 	}
 	
-	exports.createHash = __webpack_require__(34)
+	exports.createHash = __webpack_require__(38)
 	
-	exports.createHmac = __webpack_require__(47)
+	exports.createHmac = __webpack_require__(51)
 	
 	exports.randomBytes = function(size, callback) {
 	  if (callback && callback.call) {
@@ -3378,7 +3378,7 @@
 	  return ['sha1', 'sha256', 'sha512', 'md5', 'rmd160']
 	}
 	
-	var p = __webpack_require__(48)(exports)
+	var p = __webpack_require__(52)(exports)
 	exports.pbkdf2 = p.pbkdf2
 	exports.pbkdf2Sync = p.pbkdf2Sync
 	
@@ -3398,10 +3398,10 @@
 	  }
 	})
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(28).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(32).Buffer))
 
 /***/ },
-/* 28 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(Buffer, global) {/*!
@@ -3412,9 +3412,9 @@
 	 */
 	/* eslint-disable no-proto */
 	
-	var base64 = __webpack_require__(29)
-	var ieee754 = __webpack_require__(30)
-	var isArray = __webpack_require__(31)
+	var base64 = __webpack_require__(33)
+	var ieee754 = __webpack_require__(34)
+	var isArray = __webpack_require__(35)
 	
 	exports.Buffer = Buffer
 	exports.SlowBuffer = SlowBuffer
@@ -4949,10 +4949,10 @@
 	  return i
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(28).Buffer, (function() { return this; }())))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(32).Buffer, (function() { return this; }())))
 
 /***/ },
-/* 29 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -5082,7 +5082,7 @@
 
 
 /***/ },
-/* 30 */
+/* 34 */
 /***/ function(module, exports) {
 
 	exports.read = function (buffer, offset, isLE, mLen, nBytes) {
@@ -5172,7 +5172,7 @@
 
 
 /***/ },
-/* 31 */
+/* 35 */
 /***/ function(module, exports) {
 
 	
@@ -5211,13 +5211,13 @@
 
 
 /***/ },
-/* 32 */
+/* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, Buffer) {(function() {
 	  var g = ('undefined' === typeof window ? global : window) || {}
 	  _crypto = (
-	    g.crypto || g.msCrypto || __webpack_require__(33)
+	    g.crypto || g.msCrypto || __webpack_require__(37)
 	  )
 	  module.exports = function(size) {
 	    // Modern Browsers
@@ -5241,22 +5241,22 @@
 	  }
 	}())
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(28).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(32).Buffer))
 
 /***/ },
-/* 33 */
+/* 37 */
 /***/ function(module, exports) {
 
 	/* (ignored) */
 
 /***/ },
-/* 34 */
+/* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(Buffer) {var createHash = __webpack_require__(35)
+	/* WEBPACK VAR INJECTION */(function(Buffer) {var createHash = __webpack_require__(39)
 	
-	var md5 = toConstructor(__webpack_require__(44))
-	var rmd160 = toConstructor(__webpack_require__(46))
+	var md5 = toConstructor(__webpack_require__(48))
+	var rmd160 = toConstructor(__webpack_require__(50))
 	
 	function toConstructor (fn) {
 	  return function () {
@@ -5284,10 +5284,10 @@
 	  return createHash(alg)
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(28).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(32).Buffer))
 
 /***/ },
-/* 35 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var exports = module.exports = function (alg) {
@@ -5296,16 +5296,16 @@
 	  return new Alg()
 	}
 	
-	var Buffer = __webpack_require__(28).Buffer
-	var Hash   = __webpack_require__(36)(Buffer)
+	var Buffer = __webpack_require__(32).Buffer
+	var Hash   = __webpack_require__(40)(Buffer)
 	
-	exports.sha1 = __webpack_require__(37)(Buffer, Hash)
-	exports.sha256 = __webpack_require__(42)(Buffer, Hash)
-	exports.sha512 = __webpack_require__(43)(Buffer, Hash)
+	exports.sha1 = __webpack_require__(41)(Buffer, Hash)
+	exports.sha256 = __webpack_require__(46)(Buffer, Hash)
+	exports.sha512 = __webpack_require__(47)(Buffer, Hash)
 
 
 /***/ },
-/* 36 */
+/* 40 */
 /***/ function(module, exports) {
 
 	module.exports = function (Buffer) {
@@ -5388,7 +5388,7 @@
 
 
 /***/ },
-/* 37 */
+/* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -5400,7 +5400,7 @@
 	 * See http://pajhome.org.uk/crypt/md5 for details.
 	 */
 	
-	var inherits = __webpack_require__(38).inherits
+	var inherits = __webpack_require__(42).inherits
 	
 	module.exports = function (Buffer, Hash) {
 	
@@ -5532,7 +5532,7 @@
 
 
 /***/ },
-/* 38 */
+/* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, process) {// Copyright Joyent, Inc. and other Node contributors.
@@ -6060,7 +6060,7 @@
 	}
 	exports.isPrimitive = isPrimitive;
 	
-	exports.isBuffer = __webpack_require__(40);
+	exports.isBuffer = __webpack_require__(44);
 	
 	function objectToString(o) {
 	  return Object.prototype.toString.call(o);
@@ -6104,7 +6104,7 @@
 	 *     prototype.
 	 * @param {function} superCtor Constructor function to inherit prototype from.
 	 */
-	exports.inherits = __webpack_require__(41);
+	exports.inherits = __webpack_require__(45);
 	
 	exports._extend = function(origin, add) {
 	  // Don't do anything if add isn't an object
@@ -6122,10 +6122,10 @@
 	  return Object.prototype.hasOwnProperty.call(obj, prop);
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(39)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(43)))
 
 /***/ },
-/* 39 */
+/* 43 */
 /***/ function(module, exports) {
 
 	// shim for using process in browser
@@ -6222,7 +6222,7 @@
 
 
 /***/ },
-/* 40 */
+/* 44 */
 /***/ function(module, exports) {
 
 	module.exports = function isBuffer(arg) {
@@ -6233,7 +6233,7 @@
 	}
 
 /***/ },
-/* 41 */
+/* 45 */
 /***/ function(module, exports) {
 
 	if (typeof Object.create === 'function') {
@@ -6262,7 +6262,7 @@
 
 
 /***/ },
-/* 42 */
+/* 46 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -6274,7 +6274,7 @@
 	 *
 	 */
 	
-	var inherits = __webpack_require__(38).inherits
+	var inherits = __webpack_require__(42).inherits
 	
 	module.exports = function (Buffer, Hash) {
 	
@@ -6415,10 +6415,10 @@
 
 
 /***/ },
-/* 43 */
+/* 47 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var inherits = __webpack_require__(38).inherits
+	var inherits = __webpack_require__(42).inherits
 	
 	module.exports = function (Buffer, Hash) {
 	  var K = [
@@ -6665,7 +6665,7 @@
 
 
 /***/ },
-/* 44 */
+/* 48 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -6677,7 +6677,7 @@
 	 * See http://pajhome.org.uk/crypt/md5 for more info.
 	 */
 	
-	var helpers = __webpack_require__(45);
+	var helpers = __webpack_require__(49);
 	
 	/*
 	 * Calculate the MD5 of an array of little-endian words, and a bit length
@@ -6826,7 +6826,7 @@
 
 
 /***/ },
-/* 45 */
+/* 49 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(Buffer) {var intSize = 4;
@@ -6864,10 +6864,10 @@
 	
 	module.exports = { hash: hash };
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(28).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(32).Buffer))
 
 /***/ },
-/* 46 */
+/* 50 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(Buffer) {
@@ -7076,13 +7076,13 @@
 	
 	
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(28).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(32).Buffer))
 
 /***/ },
-/* 47 */
+/* 51 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(Buffer) {var createHash = __webpack_require__(34)
+	/* WEBPACK VAR INJECTION */(function(Buffer) {var createHash = __webpack_require__(38)
 	
 	var zeroBuffer = new Buffer(128)
 	zeroBuffer.fill(0)
@@ -7126,13 +7126,13 @@
 	}
 	
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(28).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(32).Buffer))
 
 /***/ },
-/* 48 */
+/* 52 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var pbkdf2Export = __webpack_require__(49)
+	var pbkdf2Export = __webpack_require__(53)
 	
 	module.exports = function (crypto, exports) {
 	  exports = exports || {}
@@ -7147,7 +7147,7 @@
 
 
 /***/ },
-/* 49 */
+/* 53 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(Buffer) {module.exports = function(crypto) {
@@ -7235,329 +7235,10 @@
 	  }
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(28).Buffer))
-
-/***/ },
-/* 50 */
-/***/ function(module, exports, __webpack_require__) {
-
-	exports.transition = __webpack_require__(51)
-	
-	exports.transform = __webpack_require__(52)
-	
-	exports.touchAction = __webpack_require__(53)
-	
-	exports.transitionend = __webpack_require__(54)
-	
-	exports.has3d = __webpack_require__(55)
-
-
-/***/ },
-/* 51 */
-/***/ function(module, exports) {
-
-	var styles = [
-	  'transition',
-	  'webkitTransition',
-	  'MozTransition',
-	  'OTransition',
-	  'msTransition'
-	]
-	
-	var el = document.createElement('p')
-	var style
-	
-	for (var i = 0; i < styles.length; i++) {
-	  if (null != el.style[styles[i]]) {
-	    style = styles[i]
-	    break
-	  }
-	}
-	el = null
-	
-	module.exports = style
-
-
-/***/ },
-/* 52 */
-/***/ function(module, exports) {
-
-	
-	var styles = [
-	  'webkitTransform',
-	  'MozTransform',
-	  'msTransform',
-	  'OTransform',
-	  'transform'
-	];
-	
-	var el = document.createElement('p');
-	var style;
-	
-	for (var i = 0; i < styles.length; i++) {
-	  style = styles[i];
-	  if (null != el.style[style]) {
-	    module.exports = style;
-	    break;
-	  }
-	}
-
-
-/***/ },
-/* 53 */
-/***/ function(module, exports) {
-
-	
-	/**
-	 * Module exports.
-	 */
-	
-	module.exports = touchActionProperty();
-	
-	/**
-	 * Returns "touchAction", "msTouchAction", or null.
-	 */
-	
-	function touchActionProperty(doc) {
-	  if (!doc) doc = document;
-	  var div = doc.createElement('div');
-	  var prop = null;
-	  if ('touchAction' in div.style) prop = 'touchAction';
-	  else if ('msTouchAction' in div.style) prop = 'msTouchAction';
-	  div = null;
-	  return prop;
-	}
-
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(32).Buffer))
 
 /***/ },
 /* 54 */
-/***/ function(module, exports) {
-
-	/**
-	 * Transition-end mapping
-	 */
-	
-	var map = {
-	  'WebkitTransition' : 'webkitTransitionEnd',
-	  'MozTransition' : 'transitionend',
-	  'OTransition' : 'oTransitionEnd',
-	  'msTransition' : 'MSTransitionEnd',
-	  'transition' : 'transitionend'
-	};
-	
-	/**
-	 * Expose `transitionend`
-	 */
-	
-	var el = document.createElement('p');
-	
-	for (var transition in map) {
-	  if (null != el.style[transition]) {
-	    module.exports = map[transition];
-	    break;
-	  }
-	}
-
-
-/***/ },
-/* 55 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	var prop = __webpack_require__(52);
-	
-	// IE <=8 doesn't have `getComputedStyle`
-	if (!prop || !window.getComputedStyle) {
-	  module.exports = false;
-	
-	} else {
-	  var map = {
-	    webkitTransform: '-webkit-transform',
-	    OTransform: '-o-transform',
-	    msTransform: '-ms-transform',
-	    MozTransform: '-moz-transform',
-	    transform: 'transform'
-	  };
-	
-	  // from: https://gist.github.com/lorenzopolidori/3794226
-	  var el = document.createElement('div');
-	  el.style[prop] = 'translate3d(1px,1px,1px)';
-	  document.body.insertBefore(el, null);
-	  var val = getComputedStyle(el).getPropertyValue(map[prop]);
-	  document.body.removeChild(el);
-	  module.exports = null != val && val.length && 'none' != val;
-	}
-
-
-/***/ },
-/* 56 */
-/***/ function(module, exports) {
-
-	
-	/**
-	 * Expose `Emitter`.
-	 */
-	
-	module.exports = Emitter;
-	
-	/**
-	 * Initialize a new `Emitter`.
-	 *
-	 * @api public
-	 */
-	
-	function Emitter(obj) {
-	  if (obj) return mixin(obj);
-	};
-	
-	/**
-	 * Mixin the emitter properties.
-	 *
-	 * @param {Object} obj
-	 * @return {Object}
-	 * @api private
-	 */
-	
-	function mixin(obj) {
-	  for (var key in Emitter.prototype) {
-	    obj[key] = Emitter.prototype[key];
-	  }
-	  return obj;
-	}
-	
-	/**
-	 * Listen on the given `event` with `fn`.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-	
-	Emitter.prototype.on =
-	Emitter.prototype.addEventListener = function(event, fn){
-	  this._callbacks = this._callbacks || {};
-	  (this._callbacks['$' + event] = this._callbacks['$' + event] || [])
-	    .push(fn);
-	  return this;
-	};
-	
-	/**
-	 * Adds an `event` listener that will be invoked a single
-	 * time then automatically removed.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-	
-	Emitter.prototype.once = function(event, fn){
-	  function on() {
-	    this.off(event, on);
-	    fn.apply(this, arguments);
-	  }
-	
-	  on.fn = fn;
-	  this.on(event, on);
-	  return this;
-	};
-	
-	/**
-	 * Remove the given callback for `event` or all
-	 * registered callbacks.
-	 *
-	 * @param {String} event
-	 * @param {Function} fn
-	 * @return {Emitter}
-	 * @api public
-	 */
-	
-	Emitter.prototype.off =
-	Emitter.prototype.removeListener =
-	Emitter.prototype.removeAllListeners =
-	Emitter.prototype.removeEventListener = function(event, fn){
-	  this._callbacks = this._callbacks || {};
-	
-	  // all
-	  if (0 == arguments.length) {
-	    this._callbacks = {};
-	    return this;
-	  }
-	
-	  // specific event
-	  var callbacks = this._callbacks['$' + event];
-	  if (!callbacks) return this;
-	
-	  // remove all handlers
-	  if (1 == arguments.length) {
-	    delete this._callbacks['$' + event];
-	    return this;
-	  }
-	
-	  // remove specific handler
-	  var cb;
-	  for (var i = 0; i < callbacks.length; i++) {
-	    cb = callbacks[i];
-	    if (cb === fn || cb.fn === fn) {
-	      callbacks.splice(i, 1);
-	      break;
-	    }
-	  }
-	  return this;
-	};
-	
-	/**
-	 * Emit `event` with the given args.
-	 *
-	 * @param {String} event
-	 * @param {Mixed} ...
-	 * @return {Emitter}
-	 */
-	
-	Emitter.prototype.emit = function(event){
-	  this._callbacks = this._callbacks || {};
-	  var args = [].slice.call(arguments, 1)
-	    , callbacks = this._callbacks['$' + event];
-	
-	  if (callbacks) {
-	    callbacks = callbacks.slice(0);
-	    for (var i = 0, len = callbacks.length; i < len; ++i) {
-	      callbacks[i].apply(this, args);
-	    }
-	  }
-	
-	  return this;
-	};
-	
-	/**
-	 * Return array of callbacks for `event`.
-	 *
-	 * @param {String} event
-	 * @return {Array}
-	 * @api public
-	 */
-	
-	Emitter.prototype.listeners = function(event){
-	  this._callbacks = this._callbacks || {};
-	  return this._callbacks['$' + event] || [];
-	};
-	
-	/**
-	 * Check if this emitter has `event` handlers.
-	 *
-	 * @param {String} event
-	 * @return {Boolean}
-	 * @api public
-	 */
-	
-	Emitter.prototype.hasListeners = function(event){
-	  return !! this.listeners(event).length;
-	};
-
-
-/***/ },
-/* 57 */
 /***/ function(module, exports) {
 
 	var endEvents = [
@@ -7649,6 +7330,3292 @@
 	  }
 	}
 
+
+/***/ },
+/* 55 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * dependencies
+	 */
+	
+	var emitter = __webpack_require__(20)
+	var classes = __webpack_require__(27)
+	var events = __webpack_require__(9)
+	var closest = __webpack_require__(56)
+	var event = __webpack_require__(10)
+	var throttle = __webpack_require__(59)
+	var transform = __webpack_require__(60)
+	var util = __webpack_require__(61)
+	var Animate = __webpack_require__(65)
+	var transition = __webpack_require__(63)
+	var transitionend = __webpack_require__(66)
+	
+	var hasTouch = 'ontouchend' in window
+	
+	/**
+	 * export `Sortable`
+	 */
+	
+	module.exports = Sortable
+	
+	/**
+	 * Initialize `Sortable` with `el`.
+	 *
+	 * @param {Element} el
+	 */
+	
+	function Sortable(el, opts){
+	  if (!(this instanceof Sortable)) return new Sortable(el, opts)
+	  if (!el) throw new TypeError('sortable(): expects an element')
+	  opts = opts || {}
+	  this.delta = opts.delta == null ? 10 : opts.delta
+	  this.el = el
+	  util.touchAction(el, 'none')
+	  this.pel = util.getRelativeElement(el)
+	  this.dragging = false
+	
+	  var h
+	  this.on('start', function () {
+	    h = el.style.height
+	    var ch = el.getBoundingClientRect().height || el.clientHeight
+	    el.style.height = ch + 'px'
+	  })
+	  this.on('end', function () {
+	    el.style.height = h
+	  })
+	}
+	
+	/**
+	 * Mixins.
+	 */
+	
+	emitter(Sortable.prototype)
+	
+	/**
+	 * Bind the draggable element selector
+	 *
+	 * @param {String} selector
+	 * @api public
+	 */
+	Sortable.prototype.bind = function (selector){
+	  this.selector = selector || ''
+	  this.docEvents = events(document, this)
+	  this.events = events(this.el, this)
+	
+	  this.events.bind('touchstart')
+	  this.events.bind('touchmove')
+	  this.events.bind('touchend')
+	  this.events.bind('touchcancel', 'ontouchend')
+	  this.docEvents.bind('touchend')
+	
+	  if (!hasTouch) {
+	    this.events.bind('mousedown', 'ontouchstart')
+	    this.events.bind('mousemove', 'ontouchmove')
+	    this.docEvents.bind('mouseup', 'ontouchend')
+	  }
+	
+	
+	  // MS IE touch events
+	  this.events.bind('PointerDown', 'ontouchstart')
+	  this.events.bind('PointerMove', 'ontouchmove')
+	  this.docEvents.bind('PointerUp', 'ontouchstart')
+	  return this
+	}
+	
+	/**
+	 * Ignore items that t match the `selector`.
+	 *
+	 * @param {String} selector
+	 * @return {Sortable}
+	 * @api public
+	 */
+	Sortable.prototype.ignore = function(selector){
+	  this.ignored = selector
+	  return this
+	}
+	
+	Sortable.prototype.horizon = function () {
+	  this.dir = 'horizon'
+	  return this
+	}
+	
+	/**
+	 * Set handle to `selector`.
+	 *
+	 * @param {String} selector
+	 * @return {Sortable}
+	 * @api public
+	 */
+	
+	Sortable.prototype.handle = function(selector){
+	  this._handle = selector
+	  return this
+	}
+	
+	Sortable.prototype.ontouchstart = function(e) {
+	  // ignore
+	  if (this.ignored && closest(e.target, this.ignored, this.el)) return
+	  var node = this.findMatch(e)
+	  // element to move
+	  if (node) node = util.matchAsChild(node, this.el)
+	  // not found
+	  if (node == null) return
+	  if (node === this.disabled) return
+	  var touch = util.getTouch(e)
+	  if (this._handle) e.preventDefault()
+	  this.timer = setTimeout(function () {
+	    this.dragEl = node
+	    this.index = util.indexof(node)
+	    this.children = util.getChildElements(this.el)
+	    var pos = util.getAbsolutePosition(node, this.pel)
+	    // place holder
+	    var holder = this.holder = node.cloneNode(false)
+	    holder.removeAttribute('id')
+	    classes(holder).add('sortable-holder')
+	    util.copy(holder.style, {
+	      borderColor: 'rgba(255,255,255,0)',
+	      backgroundColor: 'rgba(255,255,255,0)',
+	      height: pos.height + 'px',
+	      width: pos.width + 'px'
+	    })
+	    this.mouseStart = {
+	      x: touch.clientX,
+	      y: touch.clientY
+	    }
+	    classes(node).add('sortable-dragging')
+	    this.orig = util.copy(node.style, {
+	      height: pos.height + 'px',
+	      width: pos.width + 'px',
+	      left: pos.left + 'px',
+	      top: pos.top + 'px',
+	      zIndex: 99,
+	      position: 'absolute'
+	    })
+	    this.el.insertBefore(holder, node)
+	    this.dragging = true
+	    this.animate = new Animate(this.pel, node, holder)
+	    this.emit('start')
+	  }.bind(this), 100)
+	}
+	
+	Sortable.prototype.ontouchmove = function(e) {
+	  if (this.dragEl == null || this.index == null) return
+	  if (e.changedTouches && e.changedTouches.length !== 1) return
+	  if (e.defaultPrevented) return
+	  e.preventDefault()
+	  e.stopPropagation()
+	  var touch = util.getTouch(e)
+	  var touchDir = 0
+	  var sx = this.mouseStart.x
+	  var sy = this.mouseStart.y
+	  var d = this.dragEl
+	  var dx = touch.clientX - (this.x || sx)
+	  var dy = touch.clientY - (this.y || sy)
+	  this.x = touch.clientX
+	  this.y = touch.clientY
+	  if (this.dir === 'horizon') {
+	    this.tx = touch.clientX - sx
+	    util.translate(d, this.tx, 0)
+	    touchDir = dx > 0 ? 1 : 3
+	    if (dx === 0) return
+	  } else {
+	    this.ty = touch.clientY - sy
+	    util.translate(d, 0, this.ty)
+	    touchDir = dy > 0 ? 0 : 2
+	    if (dy === 0) return
+	  }
+	  if (util.getPosition(touch.clientX, touch.clientY, this.el)) {
+	    this.positionHolder(touch, touchDir)
+	  }
+	  return false
+	}
+	
+	Sortable.prototype.ontouchend = function() {
+	  this.reset()
+	}
+	
+	Sortable.prototype.remove =
+	Sortable.prototype.unbind = function() {
+	  this.events.unbind()
+	  this.docEvents.unbind()
+	  this.off()
+	}
+	
+	Sortable.prototype.findMatch = function(e){
+	  if (this._handle) return closest(e.target, this._handle, this.el)
+	  if (this.selector) {
+	    var el = closest(e.target, this.selector, this.el)
+	    return el
+	  }
+	  return util.matchAsChild(e.target, this.el)
+	}
+	
+	var positionHolder = function (e, touchDir) {
+	  var d = this.dragEl
+	  if (d == null) return
+	  var delta = this.delta
+	  var rect = d.getBoundingClientRect()
+	  var x = rect.left + rect.width/2
+	  var y = rect.top + rect.height/2
+	  var horizon = this.dir === 'horizon'
+	  var children = this.children
+	  for (var i = children.length - 1; i >= 0; i--) {
+	    var node = children[i]
+	    if (node === d) continue
+	    var pos = util.getPosition(x, y, node)
+	    if (!pos) continue
+	    if (horizon) {
+	      if (touchDir === 1 && pos.dx > - delta) {
+	        this.animate.animate(node, 3)
+	      } else if (touchDir === 3 && pos.dx < delta){
+	        this.animate.animate(node, 1)
+	      }
+	    } else {
+	      if (touchDir === 2 && pos.dy <= delta) {
+	        this.animate.animate(node, 0)
+	      } else if (touchDir === 0 && pos.dy >= -delta){
+	        this.animate.animate(node, 2)
+	      }
+	    }
+	  }
+	}
+	
+	Sortable.prototype.positionHolder = throttle(positionHolder)
+	
+	/**
+	 * Reset sortable.
+	 *
+	 * @api private
+	 * @return {Sortable}
+	 * @api private
+	 */
+	
+	Sortable.prototype.reset = function(){
+	  if (this.timer) {
+	    clearTimeout(this.timer)
+	    this.timer = null
+	  }
+	  if (this.dragging === false) return
+	  this.dragging = false
+	  var p = this.el
+	  var el = this.dragEl
+	  var h = this.holder
+	  if (!h) return
+	  this.moveTo(h, function () {
+	    el.style[transform] = ''
+	    p.insertBefore(el, h)
+	    p.removeChild(h)
+	    util.copy(el.style, this.orig)
+	    classes(el).remove('sortable-dragging')
+	    if (util.indexof(el) !== this.index) {
+	      this.emit('update', el)
+	    }
+	    delete this.index
+	    this.children = this.animate = this.holder = this.dragEl = null
+	    this.emit('end')
+	  }.bind(this))
+	}
+	
+	Sortable.prototype.moveTo = function (target, cb) {
+	  var el = this.dragEl
+	  this.disabled = el
+	  var duration = 320
+	  util.transitionDuration(el, duration, 'linear')
+	  var tx = this.tx || 0
+	  var ty = this.ty || 0
+	  var dis = this.getDistance(el, target, this.animate.dir)
+	  var x = tx + dis.x
+	  var y = ty + dis.y
+	  var nomove = (dis.x ===0 && dis.y === 0)
+	  var self = this
+	  var fn = function () {
+	    el.style[transition] = ''
+	    self.disabled = null
+	    cb()
+	  }
+	  if (nomove) {
+	    setTimeout(fn, duration)
+	  } else {
+	    var end = function () {
+	      event.unbind(el, transitionend, end)
+	      fn()
+	    }
+	    event.bind(el, transitionend, end)
+	    util.translate(el, x, y)
+	  }
+	}
+	
+	Sortable.prototype.getDistance = function (from, to, dir) {
+	  var x
+	  var y
+	  var r = from.getBoundingClientRect()
+	  var tr = to.getBoundingClientRect()
+	  var prop
+	  if (dir%2 === 0) {
+	    x = 0
+	    prop = dir === 0 ? 'top' : 'bottom'
+	    y = tr[prop] - r[prop]
+	  } else {
+	    y = 0
+	    prop = dir === 1 ? 'left' : 'right'
+	    x = tr[prop] - r[prop]
+	  }
+	  return {x: x, y: y}
+	}
+
+
+/***/ },
+/* 56 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Module Dependencies
+	 */
+	
+	var matches = __webpack_require__(57)
+	
+	/**
+	 * Export `closest`
+	 */
+	
+	module.exports = closest
+	
+	/**
+	 * Closest
+	 *
+	 * @param {Element} el
+	 * @param {String} selector
+	 * @param {Element} scope (optional)
+	 */
+	
+	function closest (el, selector, scope) {
+	  scope = scope || document.documentElement;
+	
+	  // walk up the dom
+	  while (el && el !== scope) {
+	    if (matches(el, selector)) return el;
+	    el = el.parentNode;
+	  }
+	
+	  // check scope for match
+	  return matches(el, selector) ? el : null;
+	}
+
+
+/***/ },
+/* 57 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Module dependencies.
+	 */
+	
+	var query = __webpack_require__(58);
+	
+	/**
+	 * Element prototype.
+	 */
+	
+	var proto = Element.prototype;
+	
+	/**
+	 * Vendor function.
+	 */
+	
+	var vendor = proto.matches
+	  || proto.webkitMatchesSelector
+	  || proto.mozMatchesSelector
+	  || proto.msMatchesSelector
+	  || proto.oMatchesSelector;
+	
+	/**
+	 * Expose `match()`.
+	 */
+	
+	module.exports = match;
+	
+	/**
+	 * Match `el` to `selector`.
+	 *
+	 * @param {Element} el
+	 * @param {String} selector
+	 * @return {Boolean}
+	 * @api public
+	 */
+	
+	function match(el, selector) {
+	  if (!el || el.nodeType !== 1) return false;
+	  if (vendor) return vendor.call(el, selector);
+	  var nodes = query.all(selector, el.parentNode);
+	  for (var i = 0; i < nodes.length; ++i) {
+	    if (nodes[i] == el) return true;
+	  }
+	  return false;
+	}
+
+
+/***/ },
+/* 58 */
+/***/ function(module, exports) {
+
+	function one(selector, el) {
+	  return el.querySelector(selector);
+	}
+	
+	exports = module.exports = function(selector, el){
+	  el = el || document;
+	  return one(selector, el);
+	};
+	
+	exports.all = function(selector, el){
+	  el = el || document;
+	  return el.querySelectorAll(selector);
+	};
+	
+	exports.engine = function(obj){
+	  if (!obj.one) throw new Error('.one callback required');
+	  if (!obj.all) throw new Error('.all callback required');
+	  one = obj.one;
+	  exports.all = obj.all;
+	  return exports;
+	};
+
+
+/***/ },
+/* 59 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Module Dependencies.
+	 */
+	
+	var raf = __webpack_require__(29);
+	
+	/**
+	 * Export `throttle`.
+	 */
+	
+	module.exports = throttle;
+	
+	/**
+	 * Executes a function at most once per animation frame. Kind of like
+	 * throttle, but it throttles at ~60Hz.
+	 *
+	 * @param {Function} fn - the Function to throttle once per animation frame
+	 * @return {Function}
+	 * @public
+	 */
+	
+	function throttle(fn) {
+	  var rtn;
+	  var ignoring = false;
+	
+	  return function queue() {
+	    if (ignoring) return rtn;
+	    ignoring = true;
+	
+	    raf(function() {
+	      ignoring = false;
+	    });
+	
+	    rtn = fn.apply(this, arguments);
+	    return rtn;
+	  };
+	}
+
+
+/***/ },
+/* 60 */
+/***/ function(module, exports) {
+
+	
+	var styles = [
+	  'webkitTransform',
+	  'MozTransform',
+	  'msTransform',
+	  'OTransform',
+	  'transform'
+	];
+	
+	var el = document.createElement('p');
+	var style;
+	
+	for (var i = 0; i < styles.length; i++) {
+	  style = styles[i];
+	  if (null != el.style[style]) {
+	    module.exports = style;
+	    break;
+	  }
+	}
+
+
+/***/ },
+/* 61 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var styles = __webpack_require__(26)
+	var transform = __webpack_require__(60)
+	var has3d = __webpack_require__(62)
+	var transition = __webpack_require__(63)
+	var touchAction = __webpack_require__(64)
+	
+	/**
+	 * Get the child of topEl by element within a child
+	 *
+	 * @param  {Element}  el
+	 * @param {Element} topEl
+	 * @return {Element}
+	 * @api private
+	 */
+	exports.matchAsChild = function (el, topEl) {
+	  if (el === topEl) return
+	  do {
+	    if (el.parentNode === topEl) return el
+	    el = el.parentNode
+	  } while(el)
+	}
+	
+	/**
+	 * Get position by clientX clientY in element
+	 * 1 2 3 4 => tl tr bl br
+	 *
+	 * @param {Number} x
+	 * @param {Number} y
+	 * @param  {Element}  el
+	 * @return {Boolean}
+	 * @api public
+	 */
+	exports.getPosition = function (x, y, el) {
+	  var rect = el.getBoundingClientRect()
+	  var w = rect.width || el.offsetWidth
+	  var h = rect.height || el.offsetHeight
+	  if (x > rect.left && x < rect.left + w && y > rect.top && y < rect.top + h) {
+	    return {
+	      dx: x - (rect.left + w/2),
+	      dy: y - (rect.top + h/2)
+	    }
+	  }
+	  return false
+	}
+	
+	/**
+	 * Get absolute left top width height
+	 *
+	 * @param  {Element}  el
+	 * @param {Element} pel
+	 * @return {Object}
+	 * @api public
+	 */
+	var getAbsolutePosition = exports.getAbsolutePosition = function (el, pel) {
+	  var r = el.getBoundingClientRect()
+	  var rect = pel.getBoundingClientRect()
+	  return {
+	    left: r.left - rect.left,
+	    top: r.top -rect.top,
+	    width: r.width || el.offsetWidth,
+	    height: r.height || el.offsetHeight
+	  }
+	}
+	
+	/**
+	 * Make an element absolute, return origin props
+	 *
+	 * @param  {Element}  el
+	 * @param {Element} pel
+	 * @return {Object}
+	 * @api public
+	 */
+	exports.makeAbsolute = function (el, pel) {
+	  var pos = getAbsolutePosition(el, pel)
+	  var orig = copy(el.style, {
+	    height: pos.height + 'px',
+	    width: pos.width + 'px',
+	    left: pos.left + 'px',
+	    top: pos.top + 'px',
+	    position: 'absolute',
+	    float: 'none'
+	  })
+	  return orig
+	}
+	
+	var doc = document.documentElement
+	/**
+	 * Get relative element of el
+	 *
+	 * @param  {Element}  el
+	 * @return {Element}
+	 * @api public
+	 */
+	exports.getRelativeElement = function (el) {
+	  do {
+	    el = el.parentNode
+	    if (el === doc) return el
+	    var p = styles(el, 'position')
+	    if (p === 'absolute' || p === 'fixed' || p === 'relative') {
+	      return el
+	    }
+	  } while(el)
+	}
+	
+	/**
+	 * Insert newNode after ref
+	 *
+	 * @param {Element} newNode
+	 * @param {Element} ref
+	 * @api public
+	 */
+	exports.insertAfter = function (newNode, ref) {
+	  if (ref.nextSibling) {
+	    ref.parentNode.insertBefore(newNode, ref.nextSibling)
+	  } else {
+	    ref.parentNode.appendChild(newNode)
+	  }
+	}
+	
+	/**
+	 * Copy props from from to to
+	 * return original props
+	 *
+	 * @param {Object} to
+	 * @param {Object} from
+	 * @return {Object}
+	 * @api public
+	 */
+	var copy = exports.copy = function (to, from) {
+	  var orig = {}
+	  Object.keys(from).forEach(function (k) {
+	    orig[k] = to[k]
+	    to[k] = from[k]
+	  })
+	  return orig
+	}
+	
+	/**
+	 * Get index of element as children
+	 *
+	 * @param  {Element}  el
+	 * @return {Number}
+	 * @api public
+	 */
+	exports.indexof = function (el) {
+	  var children = el.parentNode.children
+	  for (var i = children.length - 1; i >= 0; i--) {
+	    var node = children[i];
+	    if (node === el) {
+	      return i
+	    }
+	  }
+	}
+	
+	/**
+	 * Translate el to `x` `y`.
+	 *
+	 * @api public
+	 */
+	exports.translate = function(el, x, y){
+	  var s = el.style
+	  x = x || 0
+	  y = y || 0
+	  if (has3d) {
+	    s[transform] = 'translate3d(' + x + 'px,' + y + 'px, 0)'
+	  } else {
+	    s[transform] = 'translateX(' + x + 'px),translateY(' + y + 'px)'
+	  }
+	}
+	
+	/**
+	 * Set transition duration to `ms`
+	 *
+	 * @param  {Element}  el
+	 * @param {Number} ms
+	 * @api public
+	 */
+	var prefix = transition.replace(/transition/i, '').toLowerCase()
+	exports.transitionDuration = function(el, ms, ease){
+	  var s = el.style;
+	  ease = ease || 'ease-in-out'
+	  if (!prefix) {
+	    s[transition] = ms + 'ms transform ' + ease
+	  } else {
+	    s[transition] = ms + 'ms -' + prefix + '-transform ' + ease
+	  }
+	}
+	
+	/**
+	 * Gets the appropriate "touch" object for the `e` event. The event may be from
+	 * a "mouse", "touch", or "Pointer" event, so the normalization happens here.
+	 *
+	 * @api private
+	 */
+	exports.getTouch = function(e){
+	  // "mouse" and "Pointer" events just use the event object itself
+	  var touch = e;
+	  if (e.changedTouches && e.changedTouches.length > 0) {
+	    // W3C "touch" events use the `changedTouches` array
+	    touch = e.changedTouches[0];
+	  }
+	  return touch;
+	}
+	
+	/**
+	 * Sets the "touchAction" CSS style property to `value`.
+	 *
+	 * @api private
+	 */
+	exports.touchAction = function(el, value){
+	  var s = el.style;
+	  if (touchAction) {
+	    s[touchAction] = value;
+	  }
+	}
+	
+	exports.getChildElements = function (el) {
+	  var nodes = el.childNodes
+	  var arr = []
+	  for (var i = 0, l = nodes.length; i < l; i++) {
+	    var n = nodes[i]
+	    if (n.nodeType === 1) {
+	      arr.push(n)
+	    }
+	  }
+	  return arr
+	}
+
+
+/***/ },
+/* 62 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var prop = __webpack_require__(60);
+	
+	// IE <=8 doesn't have `getComputedStyle`
+	if (!prop || !window.getComputedStyle) {
+	  module.exports = false;
+	
+	} else {
+	  var map = {
+	    webkitTransform: '-webkit-transform',
+	    OTransform: '-o-transform',
+	    msTransform: '-ms-transform',
+	    MozTransform: '-moz-transform',
+	    transform: 'transform'
+	  };
+	
+	  // from: https://gist.github.com/lorenzopolidori/3794226
+	  var el = document.createElement('div');
+	  el.style[prop] = 'translate3d(1px,1px,1px)';
+	  document.body.insertBefore(el, null);
+	  var val = getComputedStyle(el).getPropertyValue(map[prop]);
+	  document.body.removeChild(el);
+	  module.exports = null != val && val.length && 'none' != val;
+	}
+
+
+/***/ },
+/* 63 */
+/***/ function(module, exports) {
+
+	var styles = [
+	  'transition',
+	  'webkitTransition',
+	  'MozTransition',
+	  'OTransition',
+	  'msTransition'
+	]
+	
+	var el = document.createElement('p')
+	var style
+	
+	for (var i = 0; i < styles.length; i++) {
+	  if (null != el.style[styles[i]]) {
+	    style = styles[i]
+	    break
+	  }
+	}
+	el = null
+	
+	module.exports = style
+
+
+/***/ },
+/* 64 */
+/***/ function(module, exports) {
+
+	
+	/**
+	 * Module exports.
+	 */
+	
+	module.exports = touchActionProperty();
+	
+	/**
+	 * Returns "touchAction", "msTouchAction", or null.
+	 */
+	
+	function touchActionProperty(doc) {
+	  if (!doc) doc = document;
+	  var div = doc.createElement('div');
+	  var prop = null;
+	  if ('touchAction' in div.style) prop = 'touchAction';
+	  else if ('msTouchAction' in div.style) prop = 'msTouchAction';
+	  div = null;
+	  return prop;
+	}
+
+
+/***/ },
+/* 65 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var util = __webpack_require__(61)
+	var transform = __webpack_require__(60)
+	var transition = __webpack_require__(63)
+	var transitionend = __webpack_require__(66)
+	var event = __webpack_require__(10)
+	var uid = __webpack_require__(67)
+	
+	function Animate(pel, dragEl, holder) {
+	  var d = this.dragEl = dragEl
+	  var r = d.getBoundingClientRect()
+	  this.holder = holder
+	  this.dx = r.width || d.offsetWidth
+	  this.dy = r.height || d.offsetHeight
+	  this.pel = pel
+	  this.animates = {}
+	}
+	
+	/**
+	 * Animate element with direction
+	 * 0 1 2 3 is for down right up left
+	 *
+	 * @param  {Element}  el
+	 * @param {Number} dir
+	 * @api public
+	 */
+	Animate.prototype.animate = function (el, dir) {
+	  if (!el.id) el.id = uid(7)
+	  var o = this.animates[el.id] || {}
+	  if (o.dir === dir) return
+	  this.dir = dir
+	  o.dir = dir
+	  // var holder = this.holder
+	  if (o.end) {
+	    event.unbind(el, transitionend, o.end);
+	    if (o.transform) {
+	      o.transform = false
+	      this.transit(el, 0, 0, dir)
+	    } else {
+	      o.transform = true
+	      var props = this.getTransformProperty(dir)
+	      this.transit(el, props.x, props.y, dir)
+	    }
+	  } else {
+	    o.transform = true
+	    util.transitionDuration(el, 280)
+	    this.animates[el.id] = o
+	    this.start(o, el, dir)
+	  }
+	}
+	
+	Animate.prototype.getTransformProperty = function (dir) {
+	  var x
+	  var y
+	  if (dir%2 === 0) {
+	    y = dir > 1 ? - this.dy : this.dy
+	  } else {
+	    x = dir > 1 ? - this.dx : this.dx
+	  }
+	  return {
+	    x: x,
+	    y: y
+	  }
+	}
+	
+	Animate.prototype.start = function (o, el, dir) {
+	  var holder = this.holder
+	  var r = holder.getBoundingClientRect()
+	  var h = r.height || holder.offsetHeight
+	  var w = r.width || holder.offsetWidth
+	  var s = holder.style
+	  var orig = o.orig = util.makeAbsolute(el, this.pel)
+	  var isAbsolute = orig.position === 'absolute'
+	  // bigger the holder
+	  if (!isAbsolute) {
+	    if (dir%2 === 0) {
+	      s.height = (h + this.dy) + 'px'
+	    } else {
+	      s.width = (w + this.dx) + 'px'
+	    }
+	  }
+	  var props = this.getTransformProperty(dir)
+	  // test if transition begin
+	  o.end = this.transit(el, props.x, props.y, dir)
+	}
+	
+	Animate.prototype.transit = function (el, x, y, dir) {
+	  var holder = this.holder
+	  var s = holder.style
+	  var p = el.parentNode
+	  var self = this
+	  var end = function () {
+	    event.unbind(el, transitionend, end);
+	    var o = self.animates[el.id]
+	    if (!o) return
+	    var orig = o.orig
+	    self.animates[el.id] = null
+	    // reset el
+	    el.style[transition] = ''
+	    el.style[transform] = ''
+	    var removed = !holder.parentNode
+	    if (!removed && o.transform && el.parentNode) {
+	      if (dir > 1) {
+	        util.insertAfter(holder, el)
+	      } else {
+	        el.parentNode.insertBefore(holder, el)
+	      }
+	    }
+	    var isAbsolute = orig.position === 'absolute'
+	    if (!isAbsolute) {
+	      util.copy(el.style, orig)
+	    }
+	    if (removed) return
+	    // reset holder
+	    var rect = holder.getBoundingClientRect()
+	    if (dir%2 === 0) {
+	      var dy = isAbsolute ? 0 : self.dy
+	      s.height = ((rect.height || holder.offsetHeight) - dy) + 'px'
+	    } else {
+	      var dx = isAbsolute ? 0 : self.dx
+	      s.width = ((rect.width || holder.offsetWidth) - dx) + 'px'
+	    }
+	  }
+	  event.bind(el, transitionend, end)
+	  util.translate(el, x, y)
+	  return end
+	}
+	
+	module.exports = Animate
+
+
+/***/ },
+/* 66 */
+/***/ function(module, exports) {
+
+	/**
+	 * Transition-end mapping
+	 */
+	
+	var map = {
+	  'WebkitTransition' : 'webkitTransitionEnd',
+	  'MozTransition' : 'transitionend',
+	  'OTransition' : 'oTransitionEnd',
+	  'msTransition' : 'MSTransitionEnd',
+	  'transition' : 'transitionend'
+	};
+	
+	/**
+	 * Expose `transitionend`
+	 */
+	
+	var el = document.createElement('p');
+	
+	for (var transition in map) {
+	  if (null != el.style[transition]) {
+	    module.exports = map[transition];
+	    break;
+	  }
+	}
+
+
+/***/ },
+/* 67 */
+/***/ function(module, exports) {
+
+	/**
+	 * Export `uid`
+	 */
+	
+	module.exports = uid;
+	
+	/**
+	 * Create a `uid`
+	 *
+	 * @param {String} len
+	 * @return {String} uid
+	 */
+	
+	function uid(len) {
+	  len = len || 7;
+	  return Math.random().toString(35).substr(2, len);
+	}
+
+
+/***/ },
+/* 68 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(setImmediate) {__webpack_require__(70)
+	var inherits = __webpack_require__(71)
+	var events = __webpack_require__(9)
+	var Iscroll = __webpack_require__(72)
+	var Emitter = __webpack_require__(20)
+	var ListRender = __webpack_require__(76)
+	var More = __webpack_require__(81)
+	var Ptr = __webpack_require__(85)
+	var throttle = __webpack_require__(74)
+	var event = __webpack_require__(10)
+	var computedStyle = __webpack_require__(26)
+	
+	/**
+	 * List constructor
+	 *
+	 * `option` optional option for [list-render](https://github.com/chemzqm/list-render)
+	 * `option.selector` selector for parentNode of repeat template, default `ul`
+	 * `option.delegate` delegate object for [reactive](https://github.com/chemzqm/reactive-lite)
+	 * `option.bindings` bindings object for [reactive](https://github.com/chemzqm/reactive-lite)
+	 * `option.filters` filters object for [reactive](https://github.com/chemzqm/reactive-lite)
+	 * `option.model` model class used for generate model
+	 * `option.empty` String or Element rendered in parentNode when internal data list is empty
+	 * `option.limit` the limit number for render when `setData()` (default no limit)
+	 * `option.moreCount` works with `option.limit` it limit count of items to render with `.more(n)` method when last item visible on scroll, default 10
+	 * `option.autoHeight` set the height of parentNode even if data not rendered (need limit to work, items should have same height)
+	 *
+	 * @param {Element | String} template
+	 * @param {Element} scrollable
+	 * @param {Object} option
+	 * @api public
+	 */
+	function List(template, scrollable, option) {
+	  if (!(this instanceof List)) return new List(template, scrollable, option)
+	  option = option || {}
+	  var selector = option.selector || 'ul'
+	  var parentNode = (scrollable === window)? document.querySelector(selector) : scrollable.querySelector(selector)
+	  this.padding = {
+	    top: parseInt(computedStyle(parentNode, 'paddingTop'), 10),
+	    bottom: parseInt(computedStyle(parentNode, 'paddingBottom'), 10)
+	  }
+	  this.scrollable = scrollable
+	  // super constructor
+	  ListRender.call(this, template, parentNode, option)
+	  this.handlers = {}
+	  this.params = {perpage: option.perpage}
+	  this.events = events(parentNode, this.handlers)
+	  this._onscroll = this.onscroll.bind(this)
+	  event.bind(scrollable, 'scroll', this._onscroll)
+	  this.total = 0
+	  if (this.autoHeight) {
+	    this._setListHeight = this.setListHeight.bind(this)
+	    // should bind to scrollable? may have performance influence
+	    event.bind(window, 'resize', this._setListHeight)
+	  }
+	}
+	
+	inherits(List, ListRender)
+	
+	Emitter(List.prototype)
+	
+	/**
+	 * Use iscroll for scrollable element
+	 *
+	 * @param {Object} opt
+	 * @api public
+	 */
+	List.prototype.iscroll = function (opt) {
+	  this._iscroll = Iscroll(this.scrollable, opt)
+	}
+	
+	/**
+	 * Handler of `scroll` event from scrollable
+	 * Render more data when bottom close to scrollable bottom
+	 *
+	 * @api public
+	 */
+	List.prototype.onscroll = throttle(function () {
+	  if (this.limit === Infinity) return
+	  var last = this.parentNode.lastElementChild
+	  if (!last) return
+	  var b
+	  do {
+	    // hidden element has 0 bottom
+	    b = last.getBoundingClientRect().bottom
+	    if (b) break
+	    last = last.previousElementSibling
+	  } while(last)
+	  var sb
+	  if (this.scrollable === 'window') {
+	    sb = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
+	  } else {
+	    sb = this.scrollable.getBoundingClientRect().bottom
+	  }
+	  var h = Math.max(this.itemHeight || 0, 30)
+	  if (b - sb < h) {
+	    this.more(this.moreCount || 10)
+	  }
+	} ,100)
+	
+	/**
+	 * User pullToRefresh for data prepend
+	 *
+	 * @param {Object} opt
+	 * @param  {Function}  cb Callback function
+	 * @api public
+	 */
+	List.prototype.pullToRefresh = function (opt, cb) {
+	 if (typeof opt === 'function') {
+	  cb = opt
+	  opt = {}
+	 }
+	 var self = this
+	 var callback = function () {
+	  var params = assign({pullTimestamp: self.pullTimestamp}, self.params)
+	  var p = cb(params)
+	   return new Promise(function (resolve, reject) {
+	      p.then(function (arr) {
+	        if (Array.isArray(arr)) {
+	          self.prependData(arr)
+	        }
+	        self.pullTimestamp = Date.now()
+	        resolve()
+	      }, reject)
+	   })
+	 }
+	 this._ptr = Ptr(this.scrollable, opt,callback)
+	}
+	
+	/**
+	 * Use more to load more data
+	 *
+	 * @param  {Function}  cb
+	 * @api public
+	 */
+	List.prototype.useMore = function (cb) {
+	  var self = this
+	  var callback = function () {
+	    if (self._iscroll) self._iscroll.refresh()
+	    var list = self.filtered || self.data
+	    var params = assign({total: list.length}, self.params)
+	    var p = cb(params)
+	    return new Promise(function (resolve, reject) {
+	      p.then(function (arr) {
+	        if (Array.isArray(arr) && arr.length) {
+	          self.appendData(arr)
+	        } else {
+	          // success without data
+	          self._more.disable()
+	          if (self._iscroll) self._iscroll.refresh()
+	        }
+	        resolve()
+	      }, reject)
+	    })
+	  }
+	  this._more = More(this.parentNode, callback, this.scrollable)
+	}
+	
+	
+	/**
+	 * Override setData, add pullTimestamp
+	 *
+	 * @api public
+	 */
+	List.prototype.setData = function () {
+	  if (!this.pullTimestamp) this.pullTimestamp = Date.now()
+	  ListRender.prototype.setData.apply(this, arguments)
+	}
+	
+	/**
+	 * Do something on dom change
+	 *
+	 * @api private
+	 */
+	List.prototype.onchange = function () {
+	  var self = this
+	  if (this._local) {
+	    var list = this.filtered || this.data
+	    this.total = list.length
+	  }
+	  if (this.autoHeight) this.setListHeight()
+	  this.emit('change')
+	  if (this._iscroll) {
+	    setImmediate(function () {
+	      self._iscroll.refresh()
+	    })
+	  }
+	}
+	
+	/**
+	 * Adjust list height if there's more data
+	 *
+	 * @api private
+	 */
+	List.prototype.setListHeight = function () {
+	  var m = this.maxMoreCount()
+	  if (m === 0) {
+	    this.parentNode.style.height = 'auto'
+	    return
+	  }
+	  var res = this.calculateItem()
+	  // something wrong
+	  if (!res.itemHeight) return
+	  var total = this.reactives.length + m
+	  var h = this.padding.top + this.padding.bottom + Math.ceil(total/res.itemRowCount)*res.itemHeight
+	  this.parentNode.style.height = h + 'px'
+	}
+	
+	/**
+	 * Set the total to `count`
+	 * Used for remote mode only
+	 *
+	 * @param  {Number}  n
+	 * @api public
+	 */
+	List.prototype.setTotal = function (count) {
+	  if (this._local) throw new Error('setTotal expect to work at remote mode')
+	  this.total = count
+	}
+	
+	/**
+	 * Delegate event `type` to `selector` with `handler`,
+	 * handler is called with event and a reactive model with content of
+	 * delegate target
+	 *
+	 * @param {String} type
+	 * @param {String} selector
+	 * @param {Function} handler
+	 * @api public
+	 */
+	List.prototype.bind = function (type, selector, handler) {
+	  var name = type + ' ' + selector
+	  var args = [].slice.call(arguments, 3)
+	  var self = this
+	  this.handlers[name] = function (e) {
+	    var el = e.delegateTarget
+	    var model = self.findModel(el)
+	    var a = [e, model].concat(args)
+	    handler.apply(e.target, a)
+	  }
+	  this.events.bind(name, name)
+	}
+	
+	/**
+	 * Sort the data by field, direction or method, when it's remote mode(default mode), emit event only
+	 *
+	 * @param {String} field
+	 * @param {Number|String} dir 1 or -1
+	 * @param {Function} method
+	 * @api public
+	 */
+	List.prototype.sort = function (field, dir, method) {
+	  dir = parseInt(dir, 10)
+	  if (this._local) {
+	    this.sortData(field, dir, method)
+	  } else {
+	    this.params.sortField = field
+	    this.params.sortDirection = dir
+	    var params = assign({curpage: this.curpage}, this.params)
+	    this.emit('sort', params)
+	  }
+	}
+	
+	/**
+	 * Filter the data with field and value
+	 *
+	 * @param {String} field
+	 * @param {String | Function} val
+	 * @api public
+	 */
+	List.prototype.filter = function (field, val) {
+	  this.scrollTo(0)
+	  if (this._local) {
+	    this.filterData(field, val)
+	  } else {
+	    var params = this.params
+	    if (!field || val === '' || val == null) {
+	      params.filterField = null
+	      params.filterValue = null
+	    } else {
+	      params.filterField = field
+	      params.filterValue = val
+	    }
+	    this.curpage = 0
+	    params = assign({curpage: 0}, params)
+	    this.emit('filter', params)
+	  }
+	}
+	
+	/**
+	 * Select page `n`
+	 *
+	 * @param  {Element}  n
+	 * @api public
+	 */
+	List.prototype.select = function (n) {
+	  if (!this.perpage) throw new Error('select expect perpage option')
+	  this.scrollTo(0)
+	  if (this._local) {
+	    ListRender.prototype.select.apply(this, arguments)
+	  } else {
+	    this.curpage = n
+	    var params = this.params
+	    params = assign({curpage: this.curpage}, params)
+	    this.emit('page', params)
+	  }
+	}
+	
+	/**
+	 * Make ptr refresh
+	 *
+	 * @api public
+	 */
+	List.prototype.refresh = function () {
+	  if (this._ptr) this._ptr.refresh()
+	}
+	
+	/**
+	 * Works in local mode
+	 *
+	 * @api public
+	 */
+	List.prototype.local = function () {
+	  this._local = true
+	}
+	
+	/**
+	 * Clean the list and unbind all event listeners
+	 *
+	 * @api public
+	 */
+	List.prototype.remove = function () {
+	  if (this._removed) return
+	  ListRender.prototype.remove.call(this)
+	  if (this._iscroll) this._iscroll.unbind()
+	  if (this._more) this._more.remove()
+	  if (this._ptr) this._ptr.unbind()
+	  this.emit('remove')
+	  event.unbind(this.scrollable, 'scroll', this._onscroll)
+	  event.unbind(window, 'resize', this._setListHeight)
+	  this.events.unbind()
+	  this.off()
+	}
+	
+	/**
+	 * Make scrollable scrollTo position Y
+	 *
+	 * @param {Number} y
+	 * @api public
+	 */
+	List.prototype.scrollTo = function (y) {
+	  if (this.scrollable === window) {
+	    window.scrollTo(0, y)
+	  } else {
+	    this.scrollable.scrollTop = y
+	  }
+	}
+	
+	/**
+	 * Calculate item height and item count per row
+	 *
+	 * @api private
+	 */
+	List.prototype.calculateItem = function () {
+	  var children = this.parentNode.children
+	  var res = {}
+	  // can not calculate
+	  if (children.length < 2)return res
+	  var bottom
+	  for (var i = 0, l = children.length; i < l; i++) {
+	    var b = children[i].getBoundingClientRect().bottom
+	    if (bottom && b !== bottom) {
+	      this.itemHeight = res.itemHeight = Math.abs(b - bottom)
+	      res.itemRowCount = i
+	      break
+	    }
+	    bottom = b
+	  }
+	  return res
+	}
+	
+	/**
+	 * Assign props
+	 *
+	 * @param {Object} to
+	 * @param {Object} from
+	 * @return {undefined}
+	 * @api public
+	 */
+	function assign(to, from) {
+	  Object.keys(from).forEach(function (k) {
+	    to[k] = from[k]
+	  })
+	  return to
+	}
+	
+	module.exports = List
+	
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(69).setImmediate))
+
+/***/ },
+/* 69 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(setImmediate, clearImmediate) {var nextTick = __webpack_require__(43).nextTick;
+	var apply = Function.prototype.apply;
+	var slice = Array.prototype.slice;
+	var immediateIds = {};
+	var nextImmediateId = 0;
+	
+	// DOM APIs, for completeness
+	
+	exports.setTimeout = function() {
+	  return new Timeout(apply.call(setTimeout, window, arguments), clearTimeout);
+	};
+	exports.setInterval = function() {
+	  return new Timeout(apply.call(setInterval, window, arguments), clearInterval);
+	};
+	exports.clearTimeout =
+	exports.clearInterval = function(timeout) { timeout.close(); };
+	
+	function Timeout(id, clearFn) {
+	  this._id = id;
+	  this._clearFn = clearFn;
+	}
+	Timeout.prototype.unref = Timeout.prototype.ref = function() {};
+	Timeout.prototype.close = function() {
+	  this._clearFn.call(window, this._id);
+	};
+	
+	// Does not start the time, just sets up the members needed.
+	exports.enroll = function(item, msecs) {
+	  clearTimeout(item._idleTimeoutId);
+	  item._idleTimeout = msecs;
+	};
+	
+	exports.unenroll = function(item) {
+	  clearTimeout(item._idleTimeoutId);
+	  item._idleTimeout = -1;
+	};
+	
+	exports._unrefActive = exports.active = function(item) {
+	  clearTimeout(item._idleTimeoutId);
+	
+	  var msecs = item._idleTimeout;
+	  if (msecs >= 0) {
+	    item._idleTimeoutId = setTimeout(function onTimeout() {
+	      if (item._onTimeout)
+	        item._onTimeout();
+	    }, msecs);
+	  }
+	};
+	
+	// That's not how node.js implements it but the exposed api is the same.
+	exports.setImmediate = typeof setImmediate === "function" ? setImmediate : function(fn) {
+	  var id = nextImmediateId++;
+	  var args = arguments.length < 2 ? false : slice.call(arguments, 1);
+	
+	  immediateIds[id] = true;
+	
+	  nextTick(function onNextTick() {
+	    if (immediateIds[id]) {
+	      // fn.call() is faster so we optimize for the common use-case
+	      // @see http://jsperf.com/call-apply-segu
+	      if (args) {
+	        fn.apply(null, args);
+	      } else {
+	        fn.call(null);
+	      }
+	      // Prevent ids from leaking
+	      exports.clearImmediate(id);
+	    }
+	  });
+	
+	  return id;
+	};
+	
+	exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate : function(id) {
+	  delete immediateIds[id];
+	};
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(69).setImmediate, __webpack_require__(69).clearImmediate))
+
+/***/ },
+/* 70 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(setImmediate) {
+	if (typeof setImmediate !== 'function') {
+	  // node is stupid and does some weird stuff with `this.`.
+	  setImmediate = function setImmediate(fn) {
+	    setTimeout(fn, 0)
+	  }
+	}
+	
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(69).setImmediate))
+
+/***/ },
+/* 71 */
+/***/ function(module, exports) {
+
+	if (typeof Object.create === 'function') {
+	  // implementation from standard node.js 'util' module
+	  module.exports = function inherits(ctor, superCtor) {
+	    ctor.super_ = superCtor
+	    ctor.prototype = Object.create(superCtor.prototype, {
+	      constructor: {
+	        value: ctor,
+	        enumerable: false,
+	        writable: true,
+	        configurable: true
+	      }
+	    });
+	  };
+	} else {
+	  // old school shim for old browsers
+	  module.exports = function inherits(ctor, superCtor) {
+	    ctor.super_ = superCtor
+	    var TempCtor = function () {}
+	    TempCtor.prototype = superCtor.prototype
+	    ctor.prototype = new TempCtor()
+	    ctor.prototype.constructor = ctor
+	  }
+	}
+
+
+/***/ },
+/* 72 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__(73)
+
+
+/***/ },
+/* 73 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var detect = __webpack_require__(1)
+	var touchAction = detect.touchAction
+	var transform = detect.transform
+	var has3d = detect.has3d
+	var computedStyle = __webpack_require__(26)
+	var Emitter = __webpack_require__(20)
+	var events = __webpack_require__(9)
+	var Tween = __webpack_require__(22)
+	var raf = __webpack_require__(29)
+	var throttle = __webpack_require__(74)
+	var Handlebar = __webpack_require__(75)
+	var max = Math.max
+	var min = Math.min
+	var now = Date.now
+	
+	var defineProperty = Object.defineProperty
+	
+	/**
+	 * Create custom event
+	 *
+	 * @param {String} name
+	 * @return {Event}
+	 * @api private
+	 */
+	function customEvent(name) {
+	  var e
+	  try {
+	    e = new CustomEvent(name)
+	  } catch(error) {
+	    try {
+	      e = document.createEvent('CustomEvent')
+	      e.initCustomEvent(name, false, false, 0)
+	    } catch(err) {
+	      return
+	    }
+	  }
+	  return e
+	}
+	
+	/**
+	 * Init iscroll with el and optional options
+	 * options.handlebar show handlebar if is true
+	 *
+	 * @param  {Element}  el
+	 * @param {Object} opts
+	 * @api public
+	 */
+	function Iscroll(el, opts) {
+	  if (! (this instanceof Iscroll)) return new Iscroll(el, opts)
+	  this.y = 0
+	  this.scrollable = el
+	  el.style.overflow = 'hidden'
+	  var children = el.children
+	  if (children.length !== 1) {
+	    throw new Error('iscroll need single element child of scrollable to work')
+	  }
+	  this.el = children[0]
+	  this.touchAction('none')
+	  this.refresh()
+	  this.bind()
+	  var self = this
+	  if (defineProperty) {
+	    defineProperty(this.scrollable, 'scrollTop', {
+	      set: function (v) {
+	        return self.scrollTo(-v, 200)
+	      },
+	      get: function () {
+	        return - self.y
+	      }
+	    })
+	  }
+	  this.on('scroll', function () {
+	    var e = customEvent('scroll')
+	    if (e) el.dispatchEvent(e)
+	  })
+	  opts = opts || {}
+	  if (opts.handlebar) {
+	    this.handlebar = new Handlebar(el)
+	  }
+	  this._refresh = this.refresh.bind(this)
+	  window.addEventListener('orientationchange', this._refresh, false)
+	  window.addEventListener('resize', this._refresh, false)
+	}
+	
+	Emitter(Iscroll.prototype)
+	
+	/**
+	 * Bind events
+	 *
+	 * @api private
+	 */
+	Iscroll.prototype.bind = function () {
+	  this.events = events(this.el, this)
+	  this.docEvents = events(document, this)
+	
+	   // W3C touch events
+	  this.events.bind('touchstart')
+	  this.events.bind('touchmove')
+	  this.docEvents.bind('touchend')
+	  this.docEvents.bind('touchcancel', 'ontouchend')
+	}
+	
+	/**
+	 * Recalculate the height
+	 *
+	 * @api public
+	 */
+	Iscroll.prototype.refresh = function () {
+	  this.viewHeight = this.scrollable.getBoundingClientRect().height
+	  this.height = this.el.getBoundingClientRect().height
+	}
+	
+	/**
+	 * Unbind all event listeners, and remove handlebar if necessary
+	 *
+	 * @api public
+	 */
+	Iscroll.prototype.unbind = function () {
+	  this.off()
+	  this.events.unbind()
+	  this.docEvents.unbind()
+	  window.removeEventListener('orientationchange', this._refresh, false)
+	  window.removeEventListener('resize', this._refresh, false)
+	  if (this.handlebar) this.scrollable.removeChild(this.handlebar.el)
+	}
+	
+	Iscroll.prototype.restrict = function (y) {
+	  y = min(y , 80)
+	  var h = Math.max(this.height, this.viewHeight)
+	  y = max(y , this.viewHeight - h - 80)
+	  return y
+	}
+	
+	/**
+	 * touchstart event handler
+	 *
+	 * @param  {Event}  e
+	 * @api private
+	 */
+	Iscroll.prototype.ontouchstart = function (e) {
+	  this.speed = null
+	  this.leftright = null
+	  if (this.tween) this.tween.stop()
+	  this.dy = 0
+	  this.ts = now()
+	  if (this.handlebar) this.resizeHandlebar()
+	
+	  var touch = this.getTouch(e)
+	  this.clientY = touch.clientY
+	  this.down = {
+	    x: touch.clientX,
+	    y: touch.clientY,
+	    start: this.y,
+	    at: now()
+	  }
+	}
+	
+	/**
+	 * touchmove event handler
+	 *
+	 * @param  {Event}  e
+	 * @api private
+	 */
+	Iscroll.prototype.ontouchmove = function (e) {
+	  e.preventDefault()
+	  // do nothing if left right move
+	  if (e.touches.length > 1 || !this.down || this.leftright) return
+	  var touch = this.getTouch(e)
+	  var down = this.down
+	  var dy = this.dy = touch.clientY - down.y
+	  var dx = touch.clientX - down.x
+	  // can not determine
+	  if (dx === 0 && dy === 0) return
+	  // determine dy and the slope
+	  if (null == this.leftright) {
+	    // no move if contentHeight < viewHeight and move up
+	    if (this.height <= this.viewHeight && dy < 0) return
+	    var slope = dx / dy
+	    // if is greater than 1 or -1, we're swiping up/down
+	    if (slope > 1 || slope < -1) {
+	      this.leftright = true
+	      if (this.handlebar) this.hideHandlebar()
+	      return
+	    } else {
+	      this.leftright = false
+	    }
+	  }
+	
+	  //calculate speed every 100 milisecond
+	  this.calcuteSpeed(touch.clientY)
+	  var start = this.down.start
+	  var dest = this.restrict(start + dy)
+	  this.translate(dest)
+	}
+	
+	/**
+	 * Calcute speed by clientY
+	 *
+	 * @param {Number} y
+	 * @api priavte
+	 */
+	Iscroll.prototype.calcuteSpeed = function (y) {
+	  var ts = now()
+	  var dt = ts - this.ts
+	  if (ts - this.down.at < 100) {
+	    this.distance = y - this.clientY
+	    this.speed = Math.abs(this.distance/dt)
+	  } else if(dt > 100){
+	    this.distance = y - this.clientY
+	    this.speed = Math.abs(this.distance/dt)
+	    this.ts = ts
+	    this.clientY = y
+	  }
+	}
+	
+	/**
+	 * Event handler for touchend
+	 *
+	 * @param  {Event}  e
+	 * @api private
+	 */
+	Iscroll.prototype.ontouchend = function (e) {
+	  if (!this.down || this.leftright) return
+	  if (this.height <= this.viewHeight && this.dy < 0) {
+	    if(this.handlebar) this.handlebar.hide()
+	    return
+	  }
+	  var touch = this.getTouch(e)
+	  this.calcuteSpeed(touch.clientY)
+	  var m = this.momentum()
+	  this.scrollTo(m.dest, m.duration, m.ease)
+	  this.emit('release', this.y)
+	  this.down = null
+	}
+	
+	/**
+	 * Calculate the animate props for moveon
+	 *
+	 * @return {Object}
+	 * @api private
+	 */
+	Iscroll.prototype.momentum = function () {
+	  var deceleration = 0.0004
+	  var speed = this.speed
+	  speed = min(speed, 0.8)
+	  var destination = this.y + ( speed * speed ) / ( 2 * deceleration ) * ( this.distance < 0 ? -1 : 1 )
+	  var duration = speed / deceleration
+	  var newY, ease
+	  if (destination > 0) {
+	    newY = 0
+	    ease = 'out-back'
+	  } else if (destination < this.viewHeight - this.height) {
+	    newY = this.viewHeight - this.height
+	    ease = 'out-back'
+	  }
+	  if (typeof newY === 'number') {
+	    duration = duration*(newY - this.y + 160)/(destination - this.y)
+	    destination = newY
+	  }
+	  if (this.y > 0 || this.y < this.viewHeight - this.height) {
+	    duration = 500
+	    ease = 'out-circ'
+	  }
+	  return {
+	    dest: destination,
+	    duration: duration,
+	    ease: ease
+	  }
+	}
+	
+	
+	/**
+	 * Scroll to potions y with optional duration and ease function
+	 *
+	 * @param {Number} y
+	 * @param {Number} duration
+	 * @param {String} easing
+	 * @api public
+	 */
+	Iscroll.prototype.scrollTo = function (y, duration, easing) {
+	  if (this.tween) this.tween.stop()
+	  var intransition = (duration > 0 && y !== this.y)
+	  if (!intransition) {
+	    this.onScrollEnd()
+	    return this.translate(y)
+	  }
+	
+	  easing = easing || 'out-cube'
+	  var tween = this.tween = Tween({y : this.y})
+	      .ease(easing)
+	      .to({y: y})
+	      .duration(duration)
+	
+	  var self = this
+	  tween.update(function(o) {
+	    self.translate(o.y)
+	  })
+	
+	  tween.on('end', function () {
+	    animate = function(){} // eslint-disable-line
+	    if (!tween.stopped) {
+	      self.onScrollEnd()
+	    }
+	  })
+	
+	  function animate() {
+	    raf(animate)
+	    tween.update()
+	  }
+	
+	  animate()
+	}
+	
+	/**
+	 * Scrollend
+	 *
+	 * @api private
+	 */
+	Iscroll.prototype.onScrollEnd = function () {
+	  this.hideHandlebar()
+	  var top = this.y === 0
+	  var bottom = this.y === (this.viewHeight - this.height)
+	  this.emit('scrollend', {
+	    top: top,
+	    bottom: bottom
+	  })
+	}
+	
+	/**
+	 * Gets the appropriate "touch" object for the `e` event. The event may be from
+	 * a "mouse", "touch", or "Pointer" event, so the normalization happens here.
+	 *
+	 * @api private
+	 */
+	
+	Iscroll.prototype.getTouch = function(e){
+	  // "mouse" and "Pointer" events just use the event object itself
+	  var touch = e
+	  if (e.changedTouches && e.changedTouches.length > 0) {
+	    // W3C "touch" events use the `changedTouches` array
+	    touch = e.changedTouches[0]
+	  }
+	  return touch
+	}
+	
+	
+	/**
+	 * Translate to `x`.
+	 *
+	 *
+	 * @api private
+	 */
+	
+	Iscroll.prototype.translate = function(y) {
+	  var s = this.el.style
+	  if (isNaN(y)) return
+	  y = Math.floor(y)
+	  //reach the end
+	  if (this.y !== y) {
+	    this.y = y
+	    this.emit('scroll', - y)
+	    if (this.handlebar) this.transformHandlebar()
+	  }
+	  if (has3d) {
+	    s[transform] = 'translate3d(0, ' + y + 'px' + ', 0)'
+	  } else {
+	    s[transform] = 'translateY(' + y + 'px)'
+	  }
+	}
+	
+	/**
+	 * Sets the "touchAction" CSS style property to `value`.
+	 *
+	 * @api private
+	 */
+	
+	Iscroll.prototype.touchAction = function(value){
+	  var s = this.el.style
+	  if (touchAction) {
+	    s[touchAction] = value
+	  }
+	}
+	
+	/**
+	 * Transform handlebar
+	 *
+	 * @api private
+	 */
+	Iscroll.prototype.transformHandlebar = throttle(function(){
+	  var vh = this.viewHeight
+	  var h = this.height
+	  var bh = vh - vh * vh/h
+	  var ih = h - vh
+	  var y = parseInt(- bh * this.y/ih)
+	  this.handlebar.translateY(y)
+	}, 100)
+	
+	/**
+	 * show the handlebar and size it
+	 * @api public
+	 */
+	Iscroll.prototype.resizeHandlebar = function(){
+	  var h = this.viewHeight * this.viewHeight/this.height
+	  this.handlebar.resize(h)
+	}
+	
+	/**
+	 * Hide handlebar
+	 *
+	 * @api private
+	 */
+	Iscroll.prototype.hideHandlebar = function () {
+	  if (this.handlebar) this.handlebar.hide()
+	}
+	
+	module.exports = Iscroll
+
+
+/***/ },
+/* 74 */
+/***/ function(module, exports) {
+
+	module.exports = throttle;
+	
+	/**
+	 * Returns a new function that, when invoked, invokes `func` at most once per `wait` milliseconds.
+	 *
+	 * @param {Function} func Function to wrap.
+	 * @param {Number} wait Number of milliseconds that must elapse between `func` invocations.
+	 * @return {Function} A new function that wraps the `func` function passed in.
+	 */
+	
+	function throttle (func, wait) {
+	  var ctx, args, rtn, timeoutID; // caching
+	  var last = 0;
+	
+	  return function throttled () {
+	    ctx = this;
+	    args = arguments;
+	    var delta = new Date() - last;
+	    if (!timeoutID)
+	      if (delta >= wait) call();
+	      else timeoutID = setTimeout(call, wait - delta);
+	    return rtn;
+	  };
+	
+	  function call () {
+	    timeoutID = 0;
+	    last = +new Date();
+	    rtn = func.apply(ctx, args);
+	    ctx = null;
+	    args = null;
+	  }
+	}
+
+
+/***/ },
+/* 75 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var detect = __webpack_require__(1)
+	var has3d = detect.has3d
+	var transform = detect.transform
+	
+	/**
+	 * Handlebar contructor
+	 *
+	 * @param {Element} scrollable
+	 * @contructor
+	 * @api public
+	 */
+	function handlebar(scrollable) {
+	  var el = this.el = document.createElement('div')
+	  el.className = 'iscroll-handlebar'
+	  scrollable.appendChild(el)
+	}
+	
+	/**
+	 * Show the handlebar and resize it
+	 *
+	 * @param {Number} h
+	 * @api public
+	 */
+	handlebar.prototype.resize = function (h) {
+	  var s = this.el.style
+	  s.height = h + 'px'
+	  s.backgroundColor = 'rgba(0,0,0,0.3)'
+	}
+	
+	/**
+	 * Hide this handlebar
+	 *
+	 * @api public
+	 */
+	handlebar.prototype.hide = function () {
+	  this.el.style.backgroundColor = 'transparent'
+	}
+	
+	/**
+	 * Move handlebar by translateY
+	 *
+	 * @param {Number} y
+	 * @api public
+	 */
+	handlebar.prototype.translateY= function(y){
+	  var s = this.el.style
+	  if (has3d) {
+	    s[transform] = 'translate3d(0, ' + y + 'px' + ', 0)'
+	  } else {
+	    s[transform] = 'translateY(' + y + 'px)'
+	  }
+	}
+	
+	module.exports = handlebar
+
+
+/***/ },
+/* 76 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Model = __webpack_require__(77)
+	var Reactive = __webpack_require__(15)
+	var domify = __webpack_require__(8)
+	var uid = __webpack_require__(80)
+	var body = document.body
+	
+	/**
+	 * Cteate ListRender
+	 *
+	 * `template` repeat element or (template string) for rendering
+	 * `parentNode` element for list element to append to
+	 * `option` optional config obj
+	 * `option.delegate` delegate object for [reactive]
+	 * `option.bindings` bindings object for [reactive]
+	 * `option.filters` filters object for [reactive]
+	 * `option.model` model class used for generate model
+	 * `option.limit` the limit number for render when `setData()` (default Infinity)
+	 * `option.perpage` the limit number for paging, should >= limit
+	 * `option.empty` String or Element rendered in parentNode when internal data list is empty
+	 *
+	 * @param  {Element}  template
+	 * @param {Element} parentNode
+	 * @param {Object} option
+	 * @api public
+	 */
+	function ListRender(template, parentNode, option) {
+	  if (!(this instanceof ListRender)) return new ListRender(template, parentNode, option)
+	  if (typeof template === 'string') template = domify(template)
+	  option = option || {}
+	  var empty = option.empty
+	  if (empty) {
+	    this.emptyEl = typeof empty === 'string' ? domify(empty) : empty
+	    delete option.empty
+	  }
+	  this.curpage = 0
+	  this.curr = 0
+	  this.parentNode = parentNode
+	  this.template = template
+	  this.reactives = []
+	  this.data = []
+	  assign(this, option)
+	  this.limit = this.limit || Infinity
+	}
+	
+	/**
+	 * Set internal data array, and render them limit by `option.limit`
+	 *
+	 * @param {Array} array
+	 * @api public
+	 */
+	ListRender.prototype.setData = function (array) {
+	  this.data = array.slice()
+	  this.renderRange(0, this.limit)
+	}
+	
+	/**
+	  Render more internal data, return `false` if no data to render
+	 *
+	 * @param {Number} max
+	 * @return {Boolean}
+	 * @api public
+	 */
+	ListRender.prototype.more = function (max) {
+	  if (this.limit === Infinity) return false
+	  var d = this.maxMoreCount()
+	  if (d === 0) return false //no more items could render
+	  var list = this.filtered || this.data
+	  var from = this.curr
+	  var to = from + Math.min(max, d)
+	  var arr = list.slice(from ,to)
+	  var fragment = this.createFragment(arr)
+	  this.parentNode.appendChild(fragment)
+	  this.curr = to
+	  this.onchange()
+	  return true
+	}
+	
+	/**
+	 * The max count of items can be rendered by more
+	 *
+	 * @return {number}
+	 * @api public
+	 */
+	ListRender.prototype.maxMoreCount = function () {
+	  // filter
+	  var list = this.filtered || this.data
+	  var l = list.length
+	  var perpage = this.perpage
+	  // no more data
+	  if (this.curr >= l) return 0
+	  var still = l - this.curr
+	  // paging
+	  if (perpage) {
+	    var c = this.reactives.length
+	    // page is full
+	    if (c >= perpage) return 0
+	    return Math.min(perpage - c, still)
+	  }
+	  return still
+	}
+	/**
+	 * Append more data and render them, no refresh
+	 *
+	 * @param {Array} array
+	 * @api public
+	 */
+	ListRender.prototype.appendData = function (array) {
+	  this.data = this.data.concat(array)
+	  var fragment = this.createFragment(array)
+	  this.parentNode.appendChild(fragment)
+	  this.curr = this.curr + array.length
+	  this.onchange()
+	}
+	/**
+	 * Prepend more data and render them, no refresh
+	 *
+	 * @param {Array} array
+	 * @api public
+	 */
+	ListRender.prototype.prependData = function (array) {
+	  this.data = array.concat(this.data)
+	  var fragment = this.createFragment(array)
+	  prepend(this.parentNode, fragment)
+	  this.curr = this.curr + array.length
+	  this.onchange()
+	}
+	
+	/**
+	 * Empty the exist list, and render the specific range of
+	 * internal data array (end not included, no option.limit restrict)
+	 *
+	 * @param {Number} start
+	 * @param {Number}  [end]
+	 * @api public
+	 */
+	ListRender.prototype.renderRange = function (start, end) {
+	  this.clean()
+	  var list = this.filtered || this.data
+	  this.curr= end = Math.min(list.length, end)
+	  var arr = list.slice(start, end)
+	  if (arr.length === 0) {
+	    this.empty(true)
+	    this.onchange()
+	    return
+	  }
+	  this.empty(false)
+	  var fragment = this.createFragment(arr)
+	  this.parentNode.appendChild(fragment)
+	  this.onchange()
+	}
+	/**
+	 * Filter the internal data with `field` and `val` (or function used for array.filter), and render them limit by `option.limit`
+	 * When val or field is falsy, render all with limit by `option.limit`
+	 *
+	 * @param {String} field
+	 * @param {String|Function} val
+	 * @return {Number}
+	 * @api public
+	 */
+	ListRender.prototype.filterData = function (field, val) {
+	  var fn
+	  if (typeof field === 'function') {
+	    fn = field
+	  } else if (typeof val ==='function') {
+	    fn = val
+	  } else if (!field || val === '' || typeof val === 'undefined') {
+	    fn = function () {return true}
+	  } else if (typeof val === 'string') {
+	    val = val.replace('\\','\\\\').replace(/\s+/,'').split(/\s*/g).join('.*')
+	    var re = new RegExp(val, 'i')
+	    fn = function (o) {
+	      return re.test(String(o[field]))
+	    }
+	  } else {
+	    fn = function (o) {
+	      return String(o[field]) == String(val)
+	    }
+	  }
+	  var arr = this.filtered = this.data.filter(fn)
+	  var l = arr.length
+	  if (l === this.data.length) this.filtered = null
+	  if (this.perpage) {
+	    this.select(0)
+	  } else {
+	    this.renderRange(0, this.limit)
+	  }
+	  return l
+	}
+	
+	/**
+	 * Sort the data with `field` `direction` ( 1 or -1 for ascend and descend)
+	 * and optional method (`string` or `number`, or a sort function for javascript array),
+	 * render them limit by `option.limit`
+	 *
+	 * @param {String} field
+	 * @param {Number} dir
+	 * @param {String|Function} method
+	 * @return {undefined}
+	 * @api public
+	 */
+	ListRender.prototype.sortData = function (field, dir, method) {
+	  var data = this.filtered || this.data
+	  dir = parseInt(dir, 10)
+	  if (!dir) throw new Error('direction should only be 1 or -1')
+	  data.sort(function (obj, other) {
+	    if (typeof method === 'function') {
+	      return method(obj, other) * dir
+	    }
+	    var a = obj[field]
+	    var b = other[field]
+	    switch (method) {
+	      case 'number':
+	        a = Number(a)
+	        b = Number(b)
+	        break
+	      case 'string':
+	        a = a.trim()
+	        b = b.trim()
+	        break
+	    }
+	    return (a < b ? 1 : -1) * dir
+	  })
+	  if (this.perpage) {
+	    this.select(this.curpage)
+	  } else {
+	    this.renderRange(0, this.limit)
+	  }
+	}
+	
+	/**
+	 * Find a specific model instance related by element, useful for event delegate
+	 *
+	 * @param  {Element}  el
+	 * @return {reactive}
+	 * @api public
+	 */
+	ListRender.prototype.findModel = function (el) {
+	  do {
+	    if (el.parentNode === this.parentNode) break
+	    if (el === body) return null
+	    el = el.parentNode
+	  } while (el.parentNode);
+	  for (var i = this.reactives.length - 1; i >= 0; i--) {
+	    var r = this.reactives[i];
+	    if (r.el === el) return r.model;
+	  }
+	  return null
+	}
+	
+	ListRender.prototype.remove = function () {
+	  if (this._removed) return
+	  this._removed = true
+	  this.clean()
+	  delete this.reactives
+	  delete this.data
+	  delete this.filtered
+	}
+	
+	/**
+	 * Show or hide the empty element
+	 *
+	 * @param {Boolean} show
+	 * @api private
+	 */
+	ListRender.prototype.empty = function (show) {
+	  var el = this.emptyEl
+	  if (!el) return
+	  if (show) {
+	    this.parentNode.appendChild(el)
+	  } else if (el.parentNode) {
+	    this.parentNode.removeChild(el)
+	  }
+	}
+	
+	/**
+	 * Clean all list items
+	 *
+	 * @api private
+	 */
+	ListRender.prototype.clean = function () {
+	  // reactive remove would trigger array splice
+	  this.reactives.slice().forEach(function (reactive) {
+	    reactive.remove()
+	  })
+	}
+	
+	/**
+	 * Create reactive config and model class by plain obj
+	 *
+	 * @param  {Object} obj
+	 * @return {undefined}
+	 * @api public
+	 */
+	ListRender.prototype.createReactiveConfig = function (obj) {
+	  var model
+	  if (this.model) {
+	    model = this.model(obj)
+	  } else {
+	    var clz = this.model = createModelClass(Object.keys(obj))
+	    model = clz(obj)
+	  }
+	  this.primaryKey = obj.hasOwnProperty('id') ? 'id' :
+	                    obj.hasOwnProperty('_id') ? '_id': null
+	  var opt = {
+	    delegate: this.delegate,
+	    bindings: this.bindings,
+	    filters: this.filters
+	  }
+	  return Reactive.generateConfig(this.template, model, opt)
+	}
+	
+	/**
+	 * Append remove to model
+	 *
+	 * @param {Object} model
+	 * @api private
+	 */
+	ListRender.prototype.appendRemove = function (model, reactive) {
+	  var orig = model.remove
+	  var id = reactive.id
+	  var self = this
+	  var fn = function (res) {
+	    if (res === false) return
+	    self.removeDataById(id)
+	    self.curr = Math.max(0, self.curr - 1)
+	    reactive.remove()
+	    self.onchange(true)
+	  }
+	  if (orig && typeof orig !== 'function') throw new TypeError('remove is not a function on model')
+	  if (!orig) {
+	    model.remove = fn
+	  } else {
+	    model.remove = function () {
+	      var res = orig.apply(this, arguments)
+	      if (res && typeof res.then === 'function') {
+	        res.then(fn, function () {})
+	      } else {
+	        fn()
+	      }
+	    }
+	  }
+	}
+	
+	/**
+	 * Create reactive instance from object
+	 *
+	 * @param  {Object}  obj
+	 * @return {Reactive}
+	 * @api private
+	 */
+	ListRender.prototype.createReactive = function (obj) {
+	  var el = this.template.cloneNode(true)
+	  var model = this.model(obj)
+	  var id
+	  if (this.primaryKey == null) {
+	    this.primaryKey = '_id'
+	    id = obj[this.primaryKey] = uid(10)
+	  } else {
+	    id = obj[this.primaryKey]
+	  }
+	  var opt = {
+	    delegate: this.delegate,
+	    bindings: this.bindings,
+	    filters: this.filters,
+	    config: this.config
+	  }
+	  var reactive = Reactive(el, model, opt)
+	  reactive.id = id
+	  this.appendRemove(model, reactive)
+	  var list = this.reactives
+	  list.push(reactive)
+	  // remove from list
+	  reactive.on('remove', function () {
+	    var i = list.indexOf(reactive)
+	    list.splice(i, 1)
+	  })
+	  return reactive
+	}
+	
+	/**
+	 * Remove data inside internal list by id
+	 *
+	 * @param {String|Number} id
+	 * @return {undefined}
+	 * @api private
+	 */
+	ListRender.prototype.removeDataById = function (id) {
+	  var pk = this.primaryKey
+	  removeItem(this.data, pk, id)
+	  if (this.filtered) {
+	    removeItem(this.filtered, pk, id)
+	  }
+	}
+	
+	function removeItem(arr, key, val) {
+	  for (var i = arr.length - 1; i >= 0; i--) {
+	    var v = arr[i]
+	    if (v && v[key] === val) {
+	      arr.splice(i, 1)
+	      return
+	    }
+	  }
+	}
+	/**
+	 * Get fragment from array of object
+	 *
+	 * @param  {Array}  arr
+	 * @api private
+	 */
+	ListRender.prototype.createFragment = function (arr) {
+	  var obj = arr[0]
+	  if (typeof this.config === 'undefined' && obj) this.config = this.createReactiveConfig(obj)
+	  var fragment = document.createDocumentFragment()
+	  arr.forEach(function (obj) {
+	    var reactive = this.createReactive(obj)
+	    fragment.appendChild(reactive.el)
+	  }, this)
+	  return fragment
+	}
+	
+	/**
+	 * Select page by page number,
+	 * rerender even if page number not change, eg: filter
+	 *
+	 * @param  {Number}  n
+	 * @api public
+	 */
+	ListRender.prototype.select = function (n) {
+	  if (!this.perpage) throw new Error('perpage required in option')
+	  var s = n*this.perpage
+	  var e = (n + 1)*this.perpage
+	  e = Math.min(e, s + this.limit)
+	  this.curpage = n
+	  this.renderRange(s, e)
+	}
+	
+	/**
+	 * Show previous page
+	 *
+	 * @api public
+	 */
+	ListRender.prototype.prev = function () {
+	  this.select(Math.max(0, this.curpage - 1))
+	}
+	
+	/**
+	 * Show next page
+	 *
+	 * @api public
+	 */
+	ListRender.prototype.next = function () {
+	  var list = this.filtered || this.data
+	  var max = Math.ceil(list.length/this.perpage) -1
+	  this.select(Math.min(max, this.curpage + 1))
+	}
+	
+	/**
+	 * Interface for extra action after dom changed
+	 *
+	 * @api private
+	 */
+	ListRender.prototype.onchange = function (isRemove) { // eslint-disable-line
+	}
+	
+	/**
+	 * Prepend parentNode with newNode
+	 *
+	 * @param {Element} parentNode
+	 * @param {Element} newNode
+	 * @api private
+	 */
+	function prepend(parentNode, newNode) {
+	  var node = parentNode.firstChild;
+	  if (node) {
+	    parentNode.insertBefore(newNode, node)
+	  } else {
+	    parentNode.appendChild(newNode)
+	  }
+	}
+	
+	/**
+	 * Assign properties
+	 *
+	 * @param {Object} to
+	 * @param {Object} from
+	 * @return {Object}
+	 * @api private
+	 */
+	function assign(to, from) {
+	  Object.keys(from).forEach(function (k) {
+	    to[k] = from[k]
+	  })
+	  return to
+	}
+	
+	/**
+	 * Create model class by keys
+	 *
+	 * @param {Array} keys
+	 * @return {Function}
+	 */
+	function createModelClass(keys) {
+	  var name = uid(5)
+	  var clz = Model(name)
+	  keys.forEach(function (k) {
+	    clz.attr(k)
+	  })
+	  return clz
+	}
+	
+	module.exports = ListRender
+
+
+/***/ },
+/* 77 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	/**
+	 * Module dependencies.
+	 */
+	
+	var proto = __webpack_require__(78)
+	var util = __webpack_require__(79)
+	var buildinRe = /^(\$stat|changed|emit|clean|on|off|attrs)$/
+	
+	/**
+	 * Expose `createModel`.
+	 */
+	
+	module.exports = createModel
+	
+	/**
+	 * Create a new model constructor with the given `name`.
+	 *
+	 * @param {String} name
+	 * @return {Function}
+	 * @api public
+	 */
+	
+	function createModel(name) {
+	  if ('string' != typeof name) throw new TypeError('model name required')
+	
+	  /**
+	   * Initialize a new model with the given `attrs`.
+	   *
+	   * @param {Object} attrs
+	   * @api public
+	   */
+	
+	  function model(attrs) {
+	    if (!(this instanceof model)) return new model(attrs)
+	    attrs = attrs || {}
+	    this._callbacks = {}
+	    this.origAttrs = Object.create(attrs)
+	    this.attrs = util.assign({}, attrs)
+	  }
+	
+	  // statics
+	
+	  model.modelName = name
+	  model.options = {}
+	
+	  // prototype
+	
+	  model.prototype = {}
+	  model.prototype.model = model;
+	
+	  /**
+	   * Define instance method
+	   *
+	   * @param {String} name
+	   * @param {Function} fn
+	   * @return {Function} self
+	   * @api public
+	   */
+	  model.method = function (name, fn) {
+	    this.prototype[name] = fn
+	    return this
+	  }
+	
+	  /**
+	   * Use function as plugin
+	   *
+	   * @param {Function} fn
+	   * @return {Function} self
+	   * @api public
+	   */
+	  model.use = function (fn) {
+	    fn(this)
+	    return this
+	  }
+	
+	  /**
+	  * Define attr with the given `name` and `options`.
+	  *
+	  * @param {String} name
+	  * @param {Object} optional options
+	  * @return {Function} self
+	  * @api public
+	  */
+	
+	  model.attr = function(name, options){
+	    options = options || {}
+	    this.options[name] = options
+	
+	    if ('id' === name || '_id' === name) {
+	      this.options[name].primaryKey = true
+	      this.primaryKey = name
+	    }
+	
+	    if (buildinRe.test(name)) throw new Error(name + ' could not be used as field name')
+	
+	    Object.defineProperty(this.prototype, name, {
+	      set: function (val) {
+	        var prev = this.attrs[name]
+	        var diff = util.diffObject(this.attrs, this.origAttrs)
+	        var changedNum = Object.keys(diff).length
+	        this.attrs[name] = val
+	        this.emit('change', name, val, prev)
+	        this.emit('change ' + name, val, prev)
+	        if (prev === val) return
+	        // make sure when multiple properties changed, only emit once
+	        if (changedNum === 0) return this.emit('change $stat', true)
+	        if (changedNum === 1 && diff[name] === val) {
+	          // became clean
+	          this.emit('change $stat', false)
+	        }
+	      },
+	      get: function () {
+	        return this.attrs[name]
+	      }
+	    })
+	
+	    return this
+	  }
+	
+	  var key
+	  for (key in proto) model.prototype[key] = proto[key]
+	
+	  return model
+	}
+	
+
+
+/***/ },
+/* 78 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	/**
+	 * Module dependencies.
+	 */
+	
+	var Emitter = __webpack_require__(20)
+	var util = __webpack_require__(79)
+	
+	/**
+	 * Mixin emitter.
+	 */
+	
+	Emitter(exports)
+	
+	
+	/**
+	 * Return `false` or an object
+	 * containing the "dirty" attributes.
+	 *
+	 * Optionally check for a specific `attr`.
+	 *
+	 * @param {String} [attr]
+	 * @return {Object|Boolean}
+	 * @api public
+	 */
+	
+	exports.changed = function(attr){
+	  var changed = util.diffObject(this.origAttrs, this.attrs)
+	  if (typeof changed[attr] !== 'undefined') {
+	    return changed[attr]
+	  }
+	  if (Object.keys(changed).length === 0) return false
+	  return changed
+	}
+	
+	/**
+	 * Set current attrs as original attrs
+	 *
+	 * @api public
+	 */
+	exports.clean = function(){
+	  for (var k in this.attrs) {
+	    this.origAttrs[k] = this.attrs[k]
+	  }
+	  this.emit('change $stat', false)
+	}
+	
+	
+	/**
+	 * Set multiple `attrs`.
+	 *
+	 * @param {Object} attrs
+	 * @return {Object} self
+	 * @api public
+	 */
+	
+	exports.set = function(attrs){
+	  for (var key in attrs) {
+	    this[key] = attrs[key]
+	  }
+	  return this
+	}
+	
+	
+	/**
+	 * Return the JSON representation of the model.
+	 *
+	 * @return {Object}
+	 * @api public
+	 */
+	
+	exports.toJSON = function(){
+	  return this.attrs
+	}
+	
+	/**
+	 * Check if `attr` is present (not `null` or `undefined`).
+	 *
+	 * @param {String} attr
+	 * @return {Boolean}
+	 * @api public
+	 */
+	
+	exports.has = function(attr){
+	  return null != this.attrs[attr]
+	}
+
+
+/***/ },
+/* 79 */
+/***/ function(module, exports) {
+
+	/**
+	 * Simple diff without nested check
+	 * Return the changed props from b
+	 *
+	 * @param {Object} a
+	 * @param {Object} b
+	 * @api public
+	 */
+	exports.diffObject = function (a, b) {
+	  var res = {}
+	  for (var k in a) {
+	    if (a[k] !== b[k]) {
+	      res[k] = b[k]
+	    }
+	  }
+	  return res
+	}
+	
+	/**
+	 * Assign props from `from` to `to` return to
+	 *
+	 * @param {Object} to
+	 * @param {Object} from
+	 * @return {Object}
+	 * @api public
+	 */
+	exports.assign = function (to, from) {
+	  Object.keys(from).forEach(function (k) {
+	    to[k] = from[k]
+	  })
+	  return to
+	}
+	
+
+
+/***/ },
+/* 80 */
+/***/ function(module, exports) {
+
+	/**
+	 * Export `uid`
+	 */
+	
+	module.exports = uid;
+	
+	/**
+	 * Create a `uid`
+	 *
+	 * @param {String} len
+	 * @return {String} uid
+	 */
+	
+	function uid(len) {
+	  len = len || 7;
+	  return Math.random().toString(35).substr(2, len);
+	}
+
+
+/***/ },
+/* 81 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var domify = __webpack_require__(8)
+	var debounce = __webpack_require__(82)
+	var template = __webpack_require__(84)
+	var events = __webpack_require__(10)
+	
+	/**
+	 * Init more with element(for insertAfter), callback ,and scrollable
+	 *
+	 * @param  {Element}  el
+	 * @param  {Function}  fn
+	 * @param {Element} scrollable
+	 * @api public
+	 */
+	function More(el, fn, scrollable) {
+	  if (!(this instanceof More)) return new More(el, fn, scrollable)
+	  this.el = el
+	  this.callback = fn
+	  this.div = domify(template)
+	  insertAfter(this.el, this.div)
+	  this.scrollable = scrollable = scrollable || el.parentNode
+	  this._onscroll = debounce(this.onscroll.bind(this), 100)
+	  events.bind(scrollable, 'scroll', this._onscroll)
+	}
+	
+	/**
+	 * On scroll event handler
+	 *
+	 * @api private
+	 */
+	More.prototype.onscroll = function (e) {
+	  if (this.loading || this._disabled) return
+	  if (!check(this.scrollable) && e !== true) return
+	  this.div.style.display = 'block'
+	  // var h = computedStyle(this.el, 'height')
+	  this.loading = true
+	  var self = this
+	  var cb = function () {
+	    self.loading = false
+	    self.div.style.display = 'none'
+	  }
+	  var res = this.callback(cb)
+	  if (res && typeof res.then === 'function') {
+	    res.then(cb, cb)
+	  }
+	}
+	
+	/**
+	 * Disable loading more data
+	 *
+	 * @return {undefined}
+	 * @api public
+	 */
+	More.prototype.disable = function () {
+	  this._disabled = true
+	  this.div.style.display = 'none'
+	  this.loading = false
+	}
+	
+	/**
+	 * Force more to start loading
+	 *
+	 * @return {undefined}
+	 * @api public
+	 */
+	More.prototype.load = function () {
+	  this.onscroll(true)
+	}
+	/**
+	 * Set the loading text
+	 *
+	 * @param {String} text
+	 * @api public
+	 */
+	More.prototype.text = function (text) {
+	  this.div.querySelector('.more-text').innerHTML = text
+	}
+	
+	/**
+	 * Remove the appended element and unbind event
+	 *
+	 * @return {undefined}
+	 * @api public
+	 */
+	More.prototype.remove = function () {
+	  events.unbind(this.scrollable, 'scroll', this._onscroll)
+	  this.div.parentNode.removeChild(this.div)
+	}
+	
+	/**
+	 * check if scrollable scroll to end
+	 */
+	function check(scrollable) {
+	  if (scrollable === window) {
+	    // viewport height
+	    var supportPageOffset = window.pageXOffset !== undefined
+	    var isCSS1Compat = ((document.compatMode || '') === 'CSS1Compat');
+	    var vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
+	    var scrollY = supportPageOffset ? window.pageYOffset : isCSS1Compat ? document.documentElement.scrollTop : document.body.scrollTop
+	    if (getDocHeight() - vh == scrollY) return true
+	  } else if (scrollable.scrollHeight - scrollable.scrollTop - scrollable.clientHeight < 1) {
+	    return true
+	  }
+	  return false
+	}
+	
+	function insertAfter(referenceNode, newNode) {
+	  var next = referenceNode.nextSibling
+	  if (next) {
+	    referenceNode.parentNode.insertBefore(newNode, next)
+	  } else {
+	    referenceNode.parentNode.appendChild(newNode)
+	  }
+	}
+	
+	function getDocHeight() {
+	    var D = document;
+	    return Math.max(D.body.scrollHeight, D.documentElement.scrollHeight);
+	}
+	
+	module.exports = More
+
+
+/***/ },
+/* 82 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	/**
+	 * Module dependencies.
+	 */
+	
+	var now = __webpack_require__(83);
+	
+	/**
+	 * Returns a function, that, as long as it continues to be invoked, will not
+	 * be triggered. The function will be called after it stops being called for
+	 * N milliseconds. If `immediate` is passed, trigger the function on the
+	 * leading edge, instead of the trailing.
+	 *
+	 * @source underscore.js
+	 * @see http://unscriptable.com/2009/03/20/debouncing-javascript-methods/
+	 * @param {Function} function to wrap
+	 * @param {Number} timeout in ms (`100`)
+	 * @param {Boolean} whether to execute at the beginning (`false`)
+	 * @api public
+	 */
+	
+	module.exports = function debounce(func, wait, immediate){
+	  var timeout, args, context, timestamp, result;
+	  if (null == wait) wait = 100;
+	
+	  function later() {
+	    var last = now() - timestamp;
+	
+	    if (last < wait && last > 0) {
+	      timeout = setTimeout(later, wait - last);
+	    } else {
+	      timeout = null;
+	      if (!immediate) {
+	        result = func.apply(context, args);
+	        if (!timeout) context = args = null;
+	      }
+	    }
+	  };
+	
+	  return function debounced() {
+	    context = this;
+	    args = arguments;
+	    timestamp = now();
+	    var callNow = immediate && !timeout;
+	    if (!timeout) timeout = setTimeout(later, wait);
+	    if (callNow) {
+	      result = func.apply(context, args);
+	      context = args = null;
+	    }
+	
+	    return result;
+	  };
+	};
+
+
+/***/ },
+/* 83 */
+/***/ function(module, exports) {
+
+	module.exports = Date.now || now
+	
+	function now() {
+	    return new Date().getTime()
+	}
+
+
+/***/ },
+/* 84 */
+/***/ function(module, exports) {
+
+	module.exports = "<div class=\"more-loading\">\n  <i class=\"more-refresh more-spin\"></i> <span class=\"more-text\">加载中...</span>\n</div>\n";
+
+/***/ },
+/* 85 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var classes = __webpack_require__(27)
+	var domify = __webpack_require__(8)
+	var once = __webpack_require__(86)
+	var template = __webpack_require__(88)
+	
+	var LOADING_TEXT = '加载中...'
+	var PULL_TEXT = '下拉刷新'
+	var RELEASE_TEXT = '释放更新'
+	
+	function prepend(parentNode, node) {
+	  if (parentNode.firstChild) {
+	    parentNode.insertBefore(node, parentNode.firstChild)
+	  } else {
+	    parentNode.appendChild(node)
+	  }
+	}
+	
+	/**
+	 * `el` the scrollable element
+	 * `callback` is called when loading start, the first argument which is a callback function should be called after the dom prepend to the list.
+	 * `option` object could contain `PULL_TEXT` `RELEASE_TEXT` `LOADING_TEXT` and `timeout` for the request timeout in millisecond.
+	 * `option.template` contains a custom template(string or element) for the inserted element
+	 * `option.timeout` millisecond of request timeout, default `10000`
+	 *
+	 * @param  {Element}  el
+	 * @param  {Object} opt
+	 * @param  {Function}  fn
+	 * @api public
+	 */
+	module.exports = function PTR(el, opt, fn) {
+	  if (!(this instanceof PTR)) return new PTR(el, opt, fn)
+	  if (typeof opt === 'function') {
+	    fn = opt
+	    opt = {}
+	  }
+	  this.el = el
+	  this.LOADING_TEXT = opt.LOADING_TEXT || LOADING_TEXT
+	  this.PULL_TEXT = opt.PULL_TEXT || PULL_TEXT
+	  this.RELEASE_TEXT = opt.RELEASE_TEXT || RELEASE_TEXT
+	  this.timeout = opt.timeout || 10000
+	  var start
+	  var loading
+	  var box
+	  var tel = opt.template
+	  // custom template
+	  if (typeof tel === 'string') {
+	    box = domify(template)
+	  } else if (tel && tel.nodeType) {
+	    box = opt.template
+	  } else {
+	    box = domify(template)
+	  }
+	  var first = el.firstElementChild
+	  if (first) {
+	    prepend(first, box)
+	  } else {
+	    prepend(el, box)
+	  }
+	  var imgEl = box.querySelector('.ptr_image')
+	  var textEl = box.querySelector('.ptr_text')
+	  var self = this
+	  function onscroll() {
+	    if (loading) return
+	    var top = el.scrollTop
+	    if (top < 0 && top >= - 40) {
+	      textEl.textContent = self.PULL_TEXT
+	    }
+	    if (top < -40) {
+	      classes(imgEl).add('ptr_rotate')
+	      textEl.textContent = self.RELEASE_TEXT
+	      start = true
+	    } else {
+	      classes(imgEl).remove('ptr_rotate')
+	      start = false
+	    }
+	  }
+	  el.addEventListener('scroll', onscroll, false)
+	
+	  function callback() {
+	    el.scrollTop = 0
+	    loading = false
+	    textEl.textContent = self.PULL_TEXT
+	    imgEl.className = 'ptr_image'
+	  }
+	
+	  /**
+	   * Refresh for more data
+	   *
+	   * @param  {Event}  event
+	   * @api public
+	   */
+	  var refresh = this.refresh = function (e) {
+	      if (e) e.stopImmediatePropagation()
+	      el.scrollTop = -40
+	      imgEl.className += ' ptr_loading'
+	      textEl.textContent = self.LOADING_TEXT
+	      loading = true
+	      var timeout = setTimeout(callback, self.timeout)
+	      var cb = once(function () {
+	        clearTimeout(timeout)
+	        callback()
+	      })
+	      var res = fn(cb)
+	      if (res && typeof res.then === 'function') {
+	        res.then(cb, cb)
+	      }
+	  }
+	
+	  var end = function (e) {
+	    if (start) {
+	      refresh(e)
+	    }
+	    start = false
+	  }
+	  document.addEventListener('touchend', end)
+	
+	  /**
+	   * Unbind event listener and remove inserted element
+	   *
+	   * @return {undefined}
+	   * @api public
+	   */
+	  this.unbind = function () {
+	    el.removeEventListener('scroll', onscroll)
+	    document.removeEventListener('touchend', end)
+	  }
+	}
+
+
+/***/ },
+/* 86 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var wrappy = __webpack_require__(87)
+	module.exports = wrappy(once)
+	
+	once.proto = once(function () {
+	  Object.defineProperty(Function.prototype, 'once', {
+	    value: function () {
+	      return once(this)
+	    },
+	    configurable: true
+	  })
+	})
+	
+	function once (fn) {
+	  var f = function () {
+	    if (f.called) return f.value
+	    f.called = true
+	    return f.value = fn.apply(this, arguments)
+	  }
+	  f.called = false
+	  return f
+	}
+
+
+/***/ },
+/* 87 */
+/***/ function(module, exports) {
+
+	// Returns a wrapper function that returns a wrapped callback
+	// The wrapper function should do some stuff, and return a
+	// presumably different callback function.
+	// This makes sure that own properties are retained, so that
+	// decorations and such are not lost along the way.
+	module.exports = wrappy
+	function wrappy (fn, cb) {
+	  if (fn && cb) return wrappy(fn)(cb)
+	
+	  if (typeof fn !== 'function')
+	    throw new TypeError('need wrapper function')
+	
+	  Object.keys(fn).forEach(function (k) {
+	    wrapper[k] = fn[k]
+	  })
+	
+	  return wrapper
+	
+	  function wrapper() {
+	    var args = new Array(arguments.length)
+	    for (var i = 0; i < args.length; i++) {
+	      args[i] = arguments[i]
+	    }
+	    var ret = fn.apply(this, args)
+	    var cb = args[args.length-1]
+	    if (typeof ret === 'function' && ret !== cb) {
+	      Object.keys(cb).forEach(function (k) {
+	        ret[k] = cb[k]
+	      })
+	    }
+	    return ret
+	  }
+	}
+
+
+/***/ },
+/* 88 */
+/***/ function(module, exports) {
+
+	module.exports = "<div class=\"ptr_box\">\n  <div class=\"ptr_container\">\n    <div class=\"ptr_image\"></div>\n    <div class=\"ptr_text\">下拉刷新</div>\n  </div>\n</div>\n";
 
 /***/ }
 /******/ ]);
