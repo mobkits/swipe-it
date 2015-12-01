@@ -52,6 +52,7 @@
 	var SwipeIt = __webpack_require__(7)
 	var tap = __webpack_require__(54)
 	var Sortable = __webpack_require__(55)
+	var domify = __webpack_require__(8)
 	
 	!(function () {
 	  function hide(el) {
@@ -130,6 +131,28 @@
 	  //el.style.zIndex = 'aoto'
 	  el.style[transform] = 'translateX(' + swipe.x + 'px) translateY(-100%)'
 	})
+	})()
+	
+	!(function () {
+	  var template = '<div class="remove">{content}</div>'
+	
+	  var list = document.getElementById('render')
+	
+	  var swipe = SwipeIt(template)
+	  swipe.bind(list, 'li')
+	  swipe.render(function (li, template) {
+	    var id = parseInt(li.getAttribute('data-id'), 10)
+	    var node
+	    if (id%2 === 0) {
+	      node = domify(template.replace(/\{content\}/, '✓'))
+	    } else {
+	      node = domify(template.replace(/\{content\}/, '✗'))
+	    }
+	    return node
+	  })
+	  swipe.delegate('touchstart', '.remove', tap(function () {
+	    swipe.clear()
+	  }))
 	})()
 
 
@@ -323,11 +346,6 @@
 	    this.templateEl = template
 	    this.template = template.outerHTML
 	  }
-	  copy(this.templateEl.style, {
-	    position: 'absolute',
-	    bottom: '0',
-	    right: '0'
-	  })
 	  this.x = 0
 	}
 	
@@ -389,20 +407,25 @@
 	    at: this.ts
 	  }
 	  this.swipeEl = el
+	  var opts = this.reactiveOpts
 	  this.onstart = function () {
 	    // only called once on move
 	    this.onstart = null
 	    // show template and bind events
 	    var pel = getRelativeElement(el)
 	    var holder = this.holder = createHolder(el)
-	    var templateEl = this.templateEl
-	    templateEl.style.height = holder.style.height
-	    var opts = this.reactiveOpts
 	    if (this.renderFn) {
 	      this.renderFn(holder)
 	    } else {
-	      holder.appendChild(templateEl)
+	      holder.appendChild(this.templateEl)
 	    }
+	    var templateEl = this.templateEl
+	    copy(templateEl.style, {
+	      position: 'absolute',
+	      bottom: '0',
+	      right: '0'
+	    })
+	    templateEl.style.height = holder.style.height
 	    this.bindEvents(holder)
 	    this.orig = makeAbsolute(el, pel)
 	    classes(el).add('swipe-dragging')
@@ -454,17 +477,20 @@
 	SwipeIt.prototype.ontouchend = function (e) {
 	  this.onstart = null
 	  if (this.stat === 'reseting') return
-	  var target = e.delegateTarget
-	  if (target && isHolder(target)) return
+	  if (e.defaultPrevented) return
 	  if (!this.down || !this.moving) return
 	  this.moving = false
-	  var touch = this.getTouch(e)
-	  this.calcuteSpeed(touch.clientX)
-	  var m = this.momentum()
-	  if (!m) return this.reset()
-	  if (!m.x) return this.reset(m.ease, m.duration)
-	  this.animate(m.x, m.ease, m.duration).catch(function () {
-	  })
+	  var target = e.delegateTarget
+	  if (target && target !== this.holder) {
+	    var touch = this.getTouch(e)
+	    this.calcuteSpeed(touch.clientX)
+	    var m = this.momentum()
+	    if (!m || !m.x) return this.reset()
+	    this.animate(m.x, m.ease, m.duration).catch(function () {
+	    })
+	  } else {
+	    this.reset()
+	  }
 	}
 	
 	/**
@@ -632,7 +658,7 @@
 	      classes(el).remove('swipe-dragging')
 	      // improve performance
 	      el.style[transform] = 'none'
-	      // wait
+	      // wait for sortable
 	      var trans = holder.style[transition]
 	      var end = function () {
 	        if (trans) event.unbind(holder, transitionend, end)
