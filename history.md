@@ -1,5 +1,6 @@
 0.1.4
 * desrease max speed
+* code refactor
 
 0.1.3
 * improve clear to be always works
