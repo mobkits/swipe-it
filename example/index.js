@@ -6,6 +6,7 @@ var transform = detect.transform
 var SwipeIt = require('..')
 var tap = require('tap-event')
 var Sortable = require('sweet-sortable')
+var domify = require('domify')
 
 !(function () {
   function hide(el) {
@@ -84,4 +85,26 @@ swipe.on('remove', function (el) {
   //el.style.zIndex = 'aoto'
   el.style[transform] = 'translateX(' + swipe.x + 'px) translateY(-100%)'
 })
+})()
+
+!(function () {
+  var template = '<div class="remove">{content}</div>'
+
+  var list = document.getElementById('render')
+
+  var swipe = SwipeIt(template)
+  swipe.bind(list, 'li')
+  swipe.render(function (li, template) {
+    var id = parseInt(li.getAttribute('data-id'), 10)
+    var node
+    if (id%2 === 0) {
+      node = domify(template.replace(/\{content\}/, '✓'))
+    } else {
+      node = domify(template.replace(/\{content\}/, '✗'))
+    }
+    return node
+  })
+  swipe.delegate('touchstart', '.remove', tap(function () {
+    swipe.clear()
+  }))
 })()
