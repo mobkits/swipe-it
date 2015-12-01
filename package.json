@@ -1,7 +1,7 @@
 {
   "name": "swipe-it",
-  "version": "0.1.1",
-  "description": "",
+  "version": "0.1.2",
+  "description": "Swipe a custom element out with animation",
   "main": "lib/index.js",
   "directories": {
     "test": "test"
@@ -67,6 +67,7 @@
     "domify": "^1.4.0",
     "prop-detect": "^1.0.0",
     "reactive-lite": "^0.5.4",
+    "scrollfix": "0.0.2",
     "sweet-sortable": "^0.1.13"
   },
   "browser": {

@@ -1,3 +1,5 @@
+var scrollfix = require('scrollfix')
+scrollfix(document.querySelector('.scrollable'))
 if ('ontouchend' in window) {
   document.querySelector('#list .alert').style.display = 'none'
 }
@@ -7,6 +9,14 @@ var SwipeIt = require('..')
 var tap = require('tap-event')
 var Sortable = require('sweet-sortable')
 var domify = require('domify')
+
+function onclick() {
+  var li = document.querySelector('li:last-child')
+  alert(getComputedStyle(li)['font-size'])
+  alert(getComputedStyle(li)['line-height'])
+}
+
+document.getElementById('check').addEventListener('click', onclick, false)
 
 !(function () {
   function hide(el) {
