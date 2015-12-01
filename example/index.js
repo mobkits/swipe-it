@@ -84,7 +84,7 @@ var template = '<div class="remove" data-color="index" on-touchstart="remove">åˆ
 var swipe = SwipeIt(template)
 swipe.bind(list, 'li')
 // slide up
-swipe.on('remove', function (el) {
+swipe.on('clear', function (el) {
   //el.style.zIndex = 'aoto'
   el.style[transform] = 'translateX(' + swipe.x + 'px) translateY(-100%)'
 })

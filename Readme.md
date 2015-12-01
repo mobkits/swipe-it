@@ -27,7 +27,7 @@ s.delegate('touchstart', '.remove', tap(function(e, li) {
   // remove the swiped node
   li.parentNode.removeChild(li)
   // holder remove with transition
-  s.removeHolder()
+  s.clear()
 }))
 ```
 
@@ -35,7 +35,7 @@ s.delegate('touchstart', '.remove', tap(function(e, li) {
 
 * `start` emit with swipe element when swipe start
 * `end` emit with swipe element just before swipe stat reset, could be used for change the transition when remove
-* `remove` emit with swipe element just before remove transition begin, used for change the transition process
+* `clear` emit with swipe element just before remove transition begin, used for change the style of swiped element for transition
 
 ## API
 
