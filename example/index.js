@@ -10,14 +10,6 @@ var tap = require('tap-event')
 var Sortable = require('sweet-sortable')
 var domify = require('domify')
 
-function onclick() {
-  var li = document.querySelector('li:last-child')
-  alert(getComputedStyle(li)['font-size'])
-  alert(getComputedStyle(li)['line-height'])
-}
-
-document.getElementById('check').addEventListener('click', onclick, false)
-
 !(function () {
   function hide(el) {
     el.style.display = 'none'
