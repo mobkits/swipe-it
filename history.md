@@ -1,3 +1,6 @@
+0.1.10
+* fix dependencies
+
 0.1.9
 * remove transition support for holder
 * code refactor
