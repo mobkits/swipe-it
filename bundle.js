@@ -408,8 +408,6 @@
 	  }
 	  this.x = 0
 	  this._onresize = this.onresize.bind(this)
-	  window.addEventListener('orientationchange', this._onresize, false)
-	  window.addEventListener('resize', this._onresize, false)
 	}
 	
 	Emitter(SwipeIt.prototype)
@@ -423,9 +421,9 @@
 	 * @return {undefined}
 	 */
 	SwipeIt.prototype.bind = function (list, selector) {
-	  this.list = list
+	  this.list = list || this.list
 	  var parentNode
-	  if (Array.isArray(list.reactives)) {
+	  if (list && Array.isArray(list.reactives)) {
 	    this.reactiveOpts = {}
 	    util.copy(this.reactiveOpts, {
 	      delegate: list.delegate,
@@ -433,10 +431,12 @@
 	      filters: list.filters
 	    })
 	    parentNode = list.parentNode
-	  } else {
+	  } else if (list && list.nodeType === 1) {
 	    parentNode = list
 	  }
-	  this.selector = selector
+	  this.selector = selector || this.selector
+	  if (!this.list) throw new Error('bind() expect a list argument')
+	  if (!this.selector) throw new Error('bind() expect a selector argument')
 	  this.events = events(parentNode, this)
 	  this.docEvent = events(document, this)
 	  this.events.bind('touchstart ' + selector)
@@ -444,6 +444,8 @@
 	  this.events.bind('touchend ' + selector)
 	  this.events.bind('touchcancel', 'ontouchend')
 	  this.docEvent.bind('touchend')
+	  window.addEventListener('orientationchange', this._onresize, false)
+	  window.addEventListener('resize', this._onresize, false)
 	}
 	
 	/**
@@ -454,13 +456,13 @@
 	  var el = e.delegateTarget
 	  if (this.stat === 'reseting' || (this.holder && el === this.holder)) return
 	  if (this.tween) this.tween.stop()
-	  // already moved
-	  if (this.swipeEl && el === this.swipeEl) return this.reset()
-	  if (this.swipeEl) return this.reset('out-quad', 100)
+	  // already move
+	  var sel = this.swipeEl
+	  if (sel && el === sel) return this.reset()
+	  if (sel) return this.reset('out-quad', 100)
 	  // do nothing if handled
 	  if (e.defaultPrevented) return
 	  var touch = util.getTouch(e)
-	  this.dx = 0
 	  this.ts = Date.now()
 	  this.clientX = touch.clientX
 	  this.down = {
@@ -469,10 +471,16 @@
 	    start: this.x,
 	    at: this.ts
 	  }
-	  var opts = this.reactiveOpts
-	  this.onstart = function () {
+	  this.onstart = function (e) {
 	    // only called once on move
 	    this.onstart = null
+	    var target = e.delegateTarget
+	    // not on the same element
+	    if (!target || target !== el) {
+	      this.down = null
+	      return
+	    }
+	    e.preventDefault()
 	    this.moving = true
 	    // show template and bind events
 	    var pel = util.getRelativeElement(el)
@@ -494,16 +502,7 @@
 	    this.orig = util.makeAbsolute(el, pel)
 	    classes(el).add('swipe-dragging')
 	    el.parentNode.insertBefore(holder, el)
-	    if (opts) {
-	      // bind reactive
-	      var model = this.list.findModel(el)
-	      if (!model) throw new Error('no model find at ListRender with [' + el.outerHTML + ']')
-	      if (!this.reactive) {
-	        this.reactive = new Reactive(templateEl, model, opts)
-	      } else {
-	        this.reactive.bind(model)
-	      }
-	    }
+	    this.bindReactive(el, templateEl)
 	    this.min = - templateEl.clientWidth - overlap
 	    this.emit('start', el)
 	  }
@@ -518,24 +517,22 @@
 	  var touch = util.getTouch(e)
 	  var cx = touch.clientX
 	  var cy = touch.clientY
-	  if (!this.onstart && !this.moving) return
 	  if (this.onstart) {
 	    var dx = cx - this.down.x
 	    var dy = cy - this.down.y
 	    if (dx === 0 && dy === 0) return
 	    if (Math.abs(dx/dy) > 1) {
-	      e.preventDefault()
-	      this.onstart()
+	      this.onstart(e)
 	    } else {
 	      this.onstart = null
 	    }
 	    return
 	  }
-	  if (e.delegateTarget !== this.swipeEl) return
+	  if (!this.moving) return
 	  e.preventDefault()
 	  //calculate speed every 100 milisecond
 	  this.calculate(cx)
-	  var x = this.down.start + touch.clientX - this.down.x
+	  var x = this.down.start + cx - this.down.x
 	  x = Math.min(0, x)
 	  x = Math.max(x, this.min)
 	  this.translate(x)
@@ -817,7 +814,7 @@
 	  var trans_prop = sel.style[transform]
 	  sel.style[transform] = trans_prop + ' rotateX(90deg)'
 	  el.style[transition] = 'height ' + duration + 'ms ' + ease
-	  self.emit('clear', self.sel)
+	  this.emit('clear', sel)
 	  var self = this
 	  var promise = new Promise(function (resolve) {
 	    var succeed
@@ -877,6 +874,20 @@
 	    left: pos.left + 'px',
 	    top: pos.top + 'px'
 	  })
+	}
+	
+	SwipeIt.prototype.bindReactive = function (el, templateEl) {
+	  var opts = this.reactiveOpts
+	  if (opts) {
+	    // bind reactive
+	    var model = this.list.findModel(el)
+	    if (!model) throw new Error('no model find at ListRender with [' + el.outerHTML + ']')
+	    if (!this.reactive) {
+	      this.reactive = new Reactive(templateEl, model, opts)
+	    } else {
+	      this.reactive.bind(model)
+	    }
+	  }
 	}
 	
 	function createHolder(el) {
