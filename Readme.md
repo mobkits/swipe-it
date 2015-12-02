@@ -13,13 +13,14 @@ TODO: test
 ## Features
 
 * Animation like ios messages
-* Works with [sweet-sortable](https://github.com/chemzqm/sweet-sortable)
-* Support temporarily disable by calling `bind` and `unbind`
-* Support window orientation change & resize event
 * Light weight and performance optimized
-* Optional bind to [list-render](https://github.com/chemzqm/list-render)
-* Custom render function
 * Delegate event binding
+* Custom animation
+* Custom render function
+* Support window orientation change & resize event
+* Works with [sweet-sortable](https://github.com/chemzqm/sweet-sortable)
+* Optional bind to [list-render](https://github.com/chemzqm/list-render)
+* Temporarily disable by calling `bind` and `unbind`
 
 ## Example
 
@@ -45,9 +46,11 @@ s.delegate('touchstart', '.remove', tap(function(e, li) {
 
 ## API
 
-### SwipeIt(template)
+### SwipeIt(template, [opts])
 
-`template` string or element for element swiped out
+* `template` string or element for element swiped out
+* `opts` optional options
+* `opts.ease` a [ease function or string](https://github.com/component/ease) for reset&expand animation, default `out-quad`
 
 ### .bind(parentNode, selector)
 
