@@ -25,7 +25,9 @@ var domify = require('domify')
   sortable.bind('li')
   //sortable.ignore('.swipe-dragging')
 
-  var swipe = SwipeIt(template)
+  var swipe = SwipeIt(template, {
+    ease: 'out-back'
+  })
   swipe.bind(list, 'li')
   swipe.on('start', function (el) {
     hide(el.querySelector('.handler'))
@@ -36,7 +38,6 @@ var domify = require('domify')
   swipe.delegate('touchstart', '.remove', tap(function () {
     swipe.clear()
   }))
-  window.swipe = swipe
 })()
 
 !(function () {
@@ -111,3 +112,4 @@ swipe.on('clear', function (el) {
     swipe.clear()
   }))
 })()
+

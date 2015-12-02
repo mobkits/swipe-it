@@ -1,3 +1,6 @@
+0.1.7
+* support option for ease function
+
 0.1.6
 * optimize performance
 * Support temporarily disable by calling `bind` and `unbind`
