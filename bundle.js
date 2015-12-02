@@ -71,7 +71,9 @@
 	  sortable.bind('li')
 	  //sortable.ignore('.swipe-dragging')
 	
-	  var swipe = SwipeIt(template)
+	  var swipe = SwipeIt(template, {
+	    ease: 'out-back'
+	  })
 	  swipe.bind(list, 'li')
 	  swipe.on('start', function (el) {
 	    hide(el.querySelector('.handler'))
@@ -82,7 +84,6 @@
 	  swipe.delegate('touchstart', '.remove', tap(function () {
 	    swipe.clear()
 	  }))
-	  window.swipe = swipe
 	})()
 	
 	!(function () {
@@ -157,6 +158,7 @@
 	    swipe.clear()
 	  }))
 	})()
+	
 
 
 /***/ },
@@ -391,13 +393,18 @@
 	
 	/**
 	 * `template` string or element for element swiped out
+	 * `opts` optional options
+	 * `opts.ease` a ease function for reset&expand animation, default `out-quad`
 	 *
 	 * @param {String | Element} template
+	 * @param {Object} opts
 	 * @constructor
 	 * @public
 	 */
-	function SwipeIt(template) {
-	  if (!(this instanceof SwipeIt)) return new SwipeIt(template)
+	function SwipeIt(template, opts) {
+	  if (!(this instanceof SwipeIt)) return new SwipeIt(template, opts)
+	  this.opts = opts = opts || {}
+	  opts.ease = opts.ease || 'out-quad'
 	  this.handler = {}
 	  if (typeof template === 'string') {
 	    this.template = template
@@ -454,34 +461,36 @@
 	 */
 	SwipeIt.prototype.ontouchstart = function (e) {
 	  var el = e.delegateTarget
-	  if (this.stat === 'reseting' || (this.holder && el === this.holder)) return
+	  if (this.stat === 'reseting' || classes(el).has('swipe-holder')) return
 	  if (this.tween) this.tween.stop()
 	  // already move
 	  var sel = this.swipeEl
 	  if (sel && el === sel) return this.reset()
+	  // faster to work with sortable
 	  if (sel) return this.reset('out-quad', 100)
 	  // do nothing if handled
 	  if (e.defaultPrevented) return
 	  var touch = util.getTouch(e)
-	  this.ts = Date.now()
-	  this.clientX = touch.clientX
-	  this.down = {
-	    x: touch.clientX,
-	    y: touch.clientY,
-	    start: this.x,
-	    at: this.ts
-	  }
-	  this.onstart = function (e) {
+	  var sx = touch.clientX
+	  var sy = touch.clientY
+	  var start = this.x
+	  var at = Date.now()
+	  this.onstart = function (ev, cx, cy) {
 	    // only called once on move
 	    this.onstart = null
-	    var target = e.delegateTarget
+	    // check direction
+	    var dx = cx - sx
+	    var dy = cy - sy
+	    if (dx === 0 && dy === 0) return
+	    if (Math.abs(dx/dy) < 1) return
+	    var target = ev.delegateTarget
 	    // not on the same element
-	    if (!target || target !== el) {
-	      this.down = null
-	      return
-	    }
-	    e.preventDefault()
-	    this.moving = true
+	    if (!target || target !== el) return
+	    ev.preventDefault()
+	    this.down = {x: sx, y: sy, start: start, at: at}
+	    // for speed calculate
+	    this.ts = at
+	    this.prevX = sx
 	    // show template and bind events
 	    var pel = util.getRelativeElement(el)
 	    var holder = this.holder = createHolder(el)
@@ -513,22 +522,12 @@
 	 * @private
 	 */
 	SwipeIt.prototype.ontouchmove = function (e) {
-	  if (this.stat === 'reseting' || !this.down) return
+	  if (this.stat === 'reseting') return
+	  if (this.onstart == null && this.down == null) return
 	  var touch = util.getTouch(e)
 	  var cx = touch.clientX
 	  var cy = touch.clientY
-	  if (this.onstart) {
-	    var dx = cx - this.down.x
-	    var dy = cy - this.down.y
-	    if (dx === 0 && dy === 0) return
-	    if (Math.abs(dx/dy) > 1) {
-	      this.onstart(e)
-	    } else {
-	      this.onstart = null
-	    }
-	    return
-	  }
-	  if (!this.moving) return
+	  if (this.onstart) return this.onstart(e, cx, cy)
 	  e.preventDefault()
 	  //calculate speed every 100 milisecond
 	  this.calculate(cx)
@@ -545,8 +544,7 @@
 	SwipeIt.prototype.ontouchend = function (e) {
 	  this.onstart = null
 	  if (this.stat === 'reseting') return
-	  if (!this.down || !this.moving) return
-	  this.moving = false
+	  if (!this.down) return
 	  var target = e.delegateTarget
 	  var touch = util.getTouch(e)
 	  if (target && target !== this.holder) {
@@ -625,16 +623,15 @@
 	 * @private
 	 */
 	SwipeIt.prototype.calculate = function (x) {
-	  var ts = Date.now()
-	  var dt = ts - this.ts
-	  if (ts - this.down.at < 100) {
-	    this.distance = x - this.down.x
-	    this.speed = Math.abs(this.distance/dt)
-	  } else if(dt > 100){
-	    this.distance = x - this.clientX
-	    this.speed = Math.abs(this.distance/dt)
-	    this.ts = ts
-	    this.clientX = x
+	  var dt = this.down.at
+	  var now = Date.now()
+	  var duration = now - this.ts
+	  if (now - dt > 100 && duration < 100) return
+	  this.distance = x - this.prevX
+	  this.speed = Math.abs(this.distance/duration)
+	  if(duration > 100){
+	    this.ts = now
+	    this.prevX = x
 	  }
 	}
 	
@@ -645,7 +642,7 @@
 	  var minX = this.min + overlap
 	  var destination = x + ( speed * speed ) / ( 2 * deceleration ) * ( this.distance < 0 ? -1 : 1 )
 	  var moveSpeed = 0.1
-	  var ease = 'out-quad'
+	  var ease = this.opts.ease
 	  var duration
 	  // already shown
 	  if (x < minX) {
@@ -704,7 +701,6 @@
 	  if (!el || !holder) return
 	  this.stat = 'reseting'
 	  this.down = null
-	  this.moving = false
 	  this.unbindEvents()
 	  var self = this
 	  var promise = new Promise(function (resolve) {
@@ -752,8 +748,13 @@
 	 */
 	SwipeIt.prototype.animate = function (x, ease, duration) {
 	  if (x == this.x) return Promise.resolve(null)
-	  ease = ease || 'out-quad'
-	  duration = duration || 350
+	  ease = ease || this.opts.ease
+	  if (!duration && typeof ease === 'string'&& /back/.test(ease)){
+	    duration = 500
+	  } else {
+	    duration = duration || 350
+	  }
+	  console.log(duration)
 	  var tween = this.tween = Tween({x : this.x})
 	  .ease(ease)
 	  .to({x : x})
