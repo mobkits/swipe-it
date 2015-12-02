@@ -29,6 +29,7 @@ var domify = require('domify')
     ease: 'out-back'
   })
   swipe.bind(list, 'li')
+  swipe.ignore('.handler')
   swipe.on('start', function (el) {
     hide(el.querySelector('.handler'))
   })

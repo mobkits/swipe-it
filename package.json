@@ -51,7 +51,6 @@
     "scrollfix": "0.0.2",
     "stack-source-map": "^1.0.4",
     "style-loader": "^0.13.0",
-    "sweet-sortable": "^0.1.10",
     "sweet-sortable": "^0.1.13",
     "url-loader": "^0.5.6",
     "webpack": "^1.12.6",
@@ -62,6 +61,7 @@
     "component-emitter": "^1.2.0",
     "component-event": "^0.1.4",
     "component-events": "^1.0.9",
+    "component-matches-selector": "^0.1.5",
     "component-raf": "^1.2.0",
     "component-tween": "^1.2.0",
     "component-uid": "0.0.2",
@@ -79,6 +79,7 @@
     "uid": "component-uid",
     "emitter": "component-emitter",
     "tap-event": "component-tap-event",
-    "event": "component-event"
+    "event": "component-event",
+    "matches-selector": "component-matches-selector"
   }
 }

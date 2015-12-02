@@ -51,6 +51,7 @@ s.delegate('touchstart', '.remove', tap(function(e, li) {
 * `template` string or element for element swiped out
 * `opts` optional options
 * `opts.ease` a [ease function or string](https://github.com/component/ease) for reset&expand animation, default `out-quad`
+* `opts.duration` duration for rest in millisecon, default 350
 
 ### .bind(parentNode, selector)
 
@@ -59,6 +60,10 @@ Bind swipe event to parentNode with delegated selector
 ### .bind(ListRender, selector)
 
 Bind to [listRender](https://github.com/chemzqm/list-render) instance, which enables automate model [reative-lite](https://github.com/chemzqm/reactive-lite) bind
+
+### .ignore(selector)
+
+Ignore touchstart event from target that within element matches selector
 
 ### .render(fn)
 
