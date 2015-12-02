@@ -1,3 +1,8 @@
+0.1.6
+* optimize performance
+* Support temporarily disable by calling `bind` and `unbind`
+* Support window orientation change & resize event
+
 0.1.5
 * code refactor
 
