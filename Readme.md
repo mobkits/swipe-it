@@ -35,7 +35,9 @@ s.delegate('touchstart', '.remove', tap(function(e, li) {
   // remove the swiped node
   li.parentNode.removeChild(li)
   // holder remove with transition
-  s.clear()
+  s.clear().then(function() {
+    // callback on element removed
+  })
 }))
 ```
 
