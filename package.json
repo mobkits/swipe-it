@@ -13,7 +13,7 @@
     "type": "git",
     "url": "git+ssh://git@github.com/chemzqm/swipe-it.git"
   },
-  "keywords": [],
+  "keywords": ["swipe", "animate"],
   "author": "chemzqm@gmail.com",
   "license": "MIT",
   "bugs": {
@@ -54,7 +54,9 @@
     "sweet-sortable": "^0.1.13",
     "url-loader": "^0.5.6",
     "webpack": "^1.12.6",
-    "webpack-dev-server": "^1.12.1"
+    "webpack-dev-server": "^1.12.1",
+    "iscroll-component": "^1.1.6",
+    "touch-simulate": "^0.1.1"
   },
   "dependencies": {
     "component-classes": "^1.2.4",
@@ -66,11 +68,9 @@
     "component-tween": "^1.2.0",
     "component-uid": "0.0.2",
     "domify": "^1.4.0",
-    "iscroll-component": "^1.1.6",
     "once": "^1.3.3",
     "prop-detect": "^1.0.0",
-    "reactive-lite": "^0.5.4",
-    "touch-simulate": "^0.1.1"
+    "reactive-lite": "^0.5.4"
   },
   "browser": {
     "events": "component-events",
