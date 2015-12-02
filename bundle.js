@@ -52,8 +52,8 @@
 	var detect = __webpack_require__(2)
 	var transform = detect.transform
 	var SwipeIt = __webpack_require__(8)
-	var tap = __webpack_require__(57)
-	var Sortable = __webpack_require__(58)
+	var tap = __webpack_require__(59)
+	var Sortable = __webpack_require__(60)
 	var domify = __webpack_require__(9)
 	
 	!(function () {
@@ -107,7 +107,7 @@
 	  index: 6,
 	  language: 'Rust'
 	}]
-	var List = __webpack_require__(72)
+	var List = __webpack_require__(74)
 	var tmpl = '<li>{language}</li>'
 	var colors = ['tomato', 'gold', 'lightgreen', 'deepskyblue', 'orange', 'violet']
 	var list = new List(tmpl, window, {
@@ -389,6 +389,7 @@
 	var has3d = detect.has3d
 	var util = __webpack_require__(54)
 	var matches = __webpack_require__(55)
+	var once = __webpack_require__(57)
 	
 	// max overlap 20px
 	var overlap = 20
@@ -431,24 +432,24 @@
 	 * @return {undefined}
 	 */
 	SwipeIt.prototype.bind = function (list, selector) {
-	  this.list = list || this.list
-	  var parentNode
-	  if (list && Array.isArray(list.reactives)) {
+	  if (!list) throw new Error('bind() expect a list argument')
+	  if (!selector) throw new Error('bind() expect a selector argument')
+	  this.list = list
+	  this.selector = selector
+	  if (Array.isArray(list.reactives)) {
 	    this.reactiveOpts = {}
 	    util.copy(this.reactiveOpts, {
 	      delegate: list.delegate,
 	      bindings: list.bindings,
 	      filters: list.filters
 	    })
-	    parentNode = list.parentNode
-	  } else if (list && list.nodeType === 1) {
-	    parentNode = list
+	    this.parentNode = list.parentNode
+	  } else if (list.nodeType === 1) {
+	    this.parentNode = list
+	  } else {
+	    throw new Error(list.toString() + ' is not supported by bind()')
 	  }
-	  this.selector = selector || this.selector
-	  if (!this.list) throw new Error('bind() expect a list argument')
-	  if (!this.selector) throw new Error('bind() expect a selector argument')
-	  this.parentNode = parentNode
-	  this.events = events(parentNode, this)
+	  this.events = events(this.parentNode, this)
 	  this.docEvent = events(document, this)
 	  this.events.bind('touchstart ' + selector)
 	  this.events.bind('touchmove ' + selector)
@@ -469,11 +470,15 @@
 	  if (this.tween) this.tween.stop()
 	  // already move
 	  var sel = this.swipeEl
-	  if (sel && el === sel) return this.reset()
+	  if (sel && el === sel) {
+	    e.preventDefault()
+	    e.stopImmediatePropagation()
+	    return this.reset()
+	  }
 	  // faster to work with sortable
 	  if (sel) return this.reset('out-quad', 100)
 	  // do nothing if handled
-	  //if (e.defaultPrevented) return
+	  if (e.defaultPrevented) return
 	  if (this._ignore && withIn(e.target, this._ignore, this.parentNode)) return
 	  var touch = util.getTouch(e)
 	  var sx = touch.clientX
@@ -481,12 +486,13 @@
 	  var start = this.x
 	  var at = Date.now()
 	  this.onstart = function (ev, cx, cy) {
-	    // only called once on move
+	    // this could happen
+	    if (cx === sx && cy === sy) return
 	    this.onstart = null
 	    // check direction
 	    var dx = cx - sx
 	    var dy = cy - sy
-	    if (dx === 0 && dy === 0) return
+	    // only called once on move
 	    if (Math.abs(dx/dy) < 1) return
 	    var target = ev.delegateTarget
 	    // not on the same element
@@ -698,49 +704,45 @@
 	 * @public
 	 * @param {String} ease optional ease
 	 * @param {Number} duration optional duration
+	 * @return {Promise}
 	 */
 	SwipeIt.prototype.reset = function (ease, duration) {
-	  if (this.stat === 'reseting') return
+	  if (this.stat === 'reseting') return Promise.resolve(null)
 	  var holder = this.holder
 	  var el = this.swipeEl
-	  if (!el || !holder) return
+	  if (!el || !holder) return Promise.resolve(null)
 	  this.stat = 'reseting'
 	  this.down = null
 	  this.unbindEvents()
 	  var self = this
 	  var promise = new Promise(function (resolve) {
-	    var promise = self.animate(0, ease, duration)
-	    promise.then(reset, reset)
-	    function reset() {
-	      // wait for sortable
-	      var trans = holder.style[transition]
-	      var succeed
-	      var end = function () {
-	        if (trans) event.unbind(holder, transitionend, end)
-	        // restore to original stat
-	        classes(el).remove('swipe-dragging')
-	        // improve performance
-	        el.style[transform] = 'none'
-	        util.copy(el.style, self.orig)
-	        holder.parentNode.removeChild(holder)
-	        self.stat = self.holder = self.swipeEl = null
-	        self.x = 0
-	        self.emit('end', el)
-	        succeed = true
-	        resolve()
-	      }
-	      // make sure called
-	      setTimeout(function () {
-	        if (!succeed) end()
-	      }, 300)
-	      if (trans) {
-	        event.bind(holder, transitionend, end)
-	      } else {
-	        end()
-	      }
+	    var p = self.animate(0, ease, duration)
+	    var reset = function () {
+	      self._reset(holder, el)
+	      resolve()
 	    }
+	    p.then(reset, reset)
 	  })
 	  return promise
+	}
+	
+	/**
+	 * Reset the status
+	 *
+	 * @private
+	 * @param {Element} holder
+	 * @param {Element} swipeEl
+	 */
+	SwipeIt.prototype._reset = function (holder, swipeEl) {
+	  if (holder.parentNode) holder.parentNode.removeChild(holder)
+	  if (swipeEl.parentNode) {
+	    swipeEl.style[transform] = 'none'
+	    util.copy(swipeEl.style, this.orig)
+	    classes(swipeEl).remove('swipe-dragging')
+	  }
+	  this.stat = this.holder = this.swipeEl = null
+	  this.x = 0
+	  this.emit('end', swipeEl)
 	}
 	
 	/**
@@ -794,7 +796,8 @@
 	}
 	
 	/**
-	 * Remove the swiped element and related holder with transition specified by `duration` (default 300) in millisecond and `ease` timing function
+	 * Remove the swiped element and related holder with transition specified by `duration` (default 300)
+	 * in millisecond and `ease` timing function (default ease-out)
 	 *
 	 * @public
 	 * @param {Number} duration
@@ -823,25 +826,17 @@
 	  this.emit('clear', sel)
 	  var self = this
 	  var promise = new Promise(function (resolve) {
-	    var succeed
-	    var end = function () {
+	    var end = once(function () {
 	      event.unbind(el, transitionend, end)
-	      if (el.parentNode) el.parentNode.removeChild(el)
 	      if (self.reactive) {
 	        self.reactive.model.remove()
 	      } else if(sel.parentNode) {
 	        sel.parentNode.removeChild(sel)
 	      }
-	      self.emit('end', sel)
-	      self.stat = self.holder = self.swipeEl = null
-	      self.x = 0
-	      succeed = true
+	      self._reset(el, sel)
 	      resolve()
-	    }
-	    setTimeout(function () {
-	      if (!succeed) end()
-	      resolve()
-	    }, duration)
+	    })
+	    setTimeout(end, duration)
 	    event.bind(el, transitionend, end)
 	    el.style.height = '0px'
 	  })
@@ -861,6 +856,9 @@
 	  window.addEventListener('orientationchange', this._onresize, false)
 	  window.addEventListener('resize', this._onresize, false)
 	  if (this.reactive) this.reactive.remove()
+	  var sel = this.swipeEl
+	  var el = this.holder
+	  if (sel && el) this._reset(el, sel)
 	}
 	
 	/**
@@ -906,7 +904,6 @@
 	    if (el === root) return false
 	    el = el.parentNode
 	  } while(el)
-	  return false
 	}
 	
 	function createHolder(el) {
@@ -915,7 +912,6 @@
 	  classes(node).add('swipe-holder')
 	  var styleObj = getComputedStyle(el)
 	  var bh = parseInt(styleObj['border-top-width'], 10) + parseInt(styleObj['border-bottom-width'], 10)
-	  var w = el.style.width
 	  util.copy(node.style, {
 	    borderWidth: '0px',
 	    overflow: 'hidden',
@@ -924,9 +920,8 @@
 	    position: 'relative',
 	    backgroundColor: 'rgba(255,255,255,0)',
 	    height: (el.clientHeight + bh) + 'px',
-	    width: w
+	    w: node.style.width
 	  })
-	  if (w) node.style.width = w
 	  return node
 	}
 	
@@ -7460,6 +7455,72 @@
 
 /***/ },
 /* 57 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var wrappy = __webpack_require__(58)
+	module.exports = wrappy(once)
+	
+	once.proto = once(function () {
+	  Object.defineProperty(Function.prototype, 'once', {
+	    value: function () {
+	      return once(this)
+	    },
+	    configurable: true
+	  })
+	})
+	
+	function once (fn) {
+	  var f = function () {
+	    if (f.called) return f.value
+	    f.called = true
+	    return f.value = fn.apply(this, arguments)
+	  }
+	  f.called = false
+	  return f
+	}
+
+
+/***/ },
+/* 58 */
+/***/ function(module, exports) {
+
+	// Returns a wrapper function that returns a wrapped callback
+	// The wrapper function should do some stuff, and return a
+	// presumably different callback function.
+	// This makes sure that own properties are retained, so that
+	// decorations and such are not lost along the way.
+	module.exports = wrappy
+	function wrappy (fn, cb) {
+	  if (fn && cb) return wrappy(fn)(cb)
+	
+	  if (typeof fn !== 'function')
+	    throw new TypeError('need wrapper function')
+	
+	  Object.keys(fn).forEach(function (k) {
+	    wrapper[k] = fn[k]
+	  })
+	
+	  return wrapper
+	
+	  function wrapper() {
+	    var args = new Array(arguments.length)
+	    for (var i = 0; i < args.length; i++) {
+	      args[i] = arguments[i]
+	    }
+	    var ret = fn.apply(this, args)
+	    var cb = args[args.length-1]
+	    if (typeof ret === 'function' && ret !== cb) {
+	      Object.keys(cb).forEach(function (k) {
+	        ret[k] = cb[k]
+	      })
+	    }
+	    return ret
+	  }
+	}
+
+
+/***/ },
+/* 59 */
 /***/ function(module, exports) {
 
 	var endEvents = [
@@ -7553,7 +7614,7 @@
 
 
 /***/ },
-/* 58 */
+/* 60 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -7563,14 +7624,14 @@
 	var emitter = __webpack_require__(21)
 	var classes = __webpack_require__(27)
 	var events = __webpack_require__(10)
-	var closest = __webpack_require__(59)
+	var closest = __webpack_require__(61)
 	var event = __webpack_require__(11)
-	var throttle = __webpack_require__(62)
-	var transform = __webpack_require__(63)
-	var util = __webpack_require__(64)
-	var Animate = __webpack_require__(69)
-	var transition = __webpack_require__(67)
-	var transitionend = __webpack_require__(70)
+	var throttle = __webpack_require__(64)
+	var transform = __webpack_require__(65)
+	var util = __webpack_require__(66)
+	var Animate = __webpack_require__(71)
+	var transition = __webpack_require__(69)
+	var transitionend = __webpack_require__(72)
 	
 	var hasTouch = 'ontouchend' in window
 	
@@ -7890,14 +7951,14 @@
 
 
 /***/ },
-/* 59 */
+/* 61 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module Dependencies
 	 */
 	
-	var matches = __webpack_require__(60)
+	var matches = __webpack_require__(62)
 	
 	/**
 	 * Export `closest`
@@ -7928,14 +7989,14 @@
 
 
 /***/ },
-/* 60 */
+/* 62 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
 	 * Module dependencies.
 	 */
 	
-	var query = __webpack_require__(61);
+	var query = __webpack_require__(63);
 	
 	/**
 	 * Element prototype.
@@ -7980,7 +8041,7 @@
 
 
 /***/ },
-/* 61 */
+/* 63 */
 /***/ function(module, exports) {
 
 	function one(selector, el) {
@@ -8007,7 +8068,7 @@
 
 
 /***/ },
-/* 62 */
+/* 64 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -8050,7 +8111,7 @@
 
 
 /***/ },
-/* 63 */
+/* 65 */
 /***/ function(module, exports) {
 
 	
@@ -8075,14 +8136,14 @@
 
 
 /***/ },
-/* 64 */
+/* 66 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var styles = __webpack_require__(65)
-	var transform = __webpack_require__(63)
-	var has3d = __webpack_require__(66)
-	var transition = __webpack_require__(67)
-	var touchAction = __webpack_require__(68)
+	var styles = __webpack_require__(67)
+	var transform = __webpack_require__(65)
+	var has3d = __webpack_require__(68)
+	var transition = __webpack_require__(69)
+	var touchAction = __webpack_require__(70)
 	
 	/**
 	 * Get the child of topEl by element within a child
@@ -8308,7 +8369,7 @@
 
 
 /***/ },
-/* 65 */
+/* 67 */
 /***/ function(module, exports) {
 
 	// DEV: We don't use var but favor parameters since these play nicer with minification
@@ -8341,11 +8402,11 @@
 
 
 /***/ },
-/* 66 */
+/* 68 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var prop = __webpack_require__(63);
+	var prop = __webpack_require__(65);
 	
 	// IE <=8 doesn't have `getComputedStyle`
 	if (!prop || !window.getComputedStyle) {
@@ -8371,7 +8432,7 @@
 
 
 /***/ },
-/* 67 */
+/* 69 */
 /***/ function(module, exports) {
 
 	var styles = [
@@ -8397,7 +8458,7 @@
 
 
 /***/ },
-/* 68 */
+/* 70 */
 /***/ function(module, exports) {
 
 	
@@ -8423,15 +8484,15 @@
 
 
 /***/ },
-/* 69 */
+/* 71 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var util = __webpack_require__(64)
-	var transform = __webpack_require__(63)
-	var transition = __webpack_require__(67)
-	var transitionend = __webpack_require__(70)
+	var util = __webpack_require__(66)
+	var transform = __webpack_require__(65)
+	var transition = __webpack_require__(69)
+	var transitionend = __webpack_require__(72)
 	var event = __webpack_require__(11)
-	var uid = __webpack_require__(71)
+	var uid = __webpack_require__(73)
 	
 	function Animate(pel, dragEl, holder) {
 	  var d = this.dragEl = dragEl
@@ -8557,7 +8618,7 @@
 
 
 /***/ },
-/* 70 */
+/* 72 */
 /***/ function(module, exports) {
 
 	/**
@@ -8587,7 +8648,7 @@
 
 
 /***/ },
-/* 71 */
+/* 73 */
 /***/ function(module, exports) {
 
 	/**
@@ -8610,20 +8671,20 @@
 
 
 /***/ },
-/* 72 */
+/* 74 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(setImmediate) {__webpack_require__(74)
-	var inherits = __webpack_require__(75)
+	/* WEBPACK VAR INJECTION */(function(setImmediate) {__webpack_require__(76)
+	var inherits = __webpack_require__(77)
 	var events = __webpack_require__(10)
-	var Iscroll = __webpack_require__(76)
+	var Iscroll = __webpack_require__(78)
 	var Emitter = __webpack_require__(21)
-	var ListRender = __webpack_require__(80)
-	var More = __webpack_require__(85)
-	var Ptr = __webpack_require__(89)
-	var throttle = __webpack_require__(78)
+	var ListRender = __webpack_require__(82)
+	var More = __webpack_require__(87)
+	var Ptr = __webpack_require__(91)
+	var throttle = __webpack_require__(80)
 	var event = __webpack_require__(11)
-	var computedStyle = __webpack_require__(65)
+	var computedStyle = __webpack_require__(67)
 	
 	/**
 	 * List constructor
@@ -9010,10 +9071,10 @@
 	
 	module.exports = List
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(73).setImmediate))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(75).setImmediate))
 
 /***/ },
-/* 73 */
+/* 75 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(setImmediate, clearImmediate) {var nextTick = __webpack_require__(43).nextTick;
@@ -9092,10 +9153,10 @@
 	exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate : function(id) {
 	  delete immediateIds[id];
 	};
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(73).setImmediate, __webpack_require__(73).clearImmediate))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(75).setImmediate, __webpack_require__(75).clearImmediate))
 
 /***/ },
-/* 74 */
+/* 76 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(setImmediate) {
@@ -9106,10 +9167,10 @@
 	  }
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(73).setImmediate))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(75).setImmediate))
 
 /***/ },
-/* 75 */
+/* 77 */
 /***/ function(module, exports) {
 
 	if (typeof Object.create === 'function') {
@@ -9138,27 +9199,27 @@
 
 
 /***/ },
-/* 76 */
+/* 78 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(77)
+	module.exports = __webpack_require__(79)
 
 
 /***/ },
-/* 77 */
+/* 79 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var detect = __webpack_require__(2)
 	var touchAction = detect.touchAction
 	var transform = detect.transform
 	var has3d = detect.has3d
-	var computedStyle = __webpack_require__(65)
+	var computedStyle = __webpack_require__(67)
 	var Emitter = __webpack_require__(21)
 	var events = __webpack_require__(10)
 	var Tween = __webpack_require__(23)
 	var raf = __webpack_require__(29)
-	var throttle = __webpack_require__(78)
-	var Handlebar = __webpack_require__(79)
+	var throttle = __webpack_require__(80)
+	var Handlebar = __webpack_require__(81)
 	var max = Math.max
 	var min = Math.min
 	var now = Date.now
@@ -9567,7 +9628,7 @@
 
 
 /***/ },
-/* 78 */
+/* 80 */
 /***/ function(module, exports) {
 
 	module.exports = throttle;
@@ -9605,7 +9666,7 @@
 
 
 /***/ },
-/* 79 */
+/* 81 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var detect = __webpack_require__(2)
@@ -9665,13 +9726,13 @@
 
 
 /***/ },
-/* 80 */
+/* 82 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Model = __webpack_require__(81)
+	var Model = __webpack_require__(83)
 	var Reactive = __webpack_require__(16)
 	var domify = __webpack_require__(9)
-	var uid = __webpack_require__(84)
+	var uid = __webpack_require__(86)
 	var body = document.body
 	
 	/**
@@ -10182,7 +10243,7 @@
 
 
 /***/ },
-/* 81 */
+/* 83 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -10190,8 +10251,8 @@
 	 * Module dependencies.
 	 */
 	
-	var proto = __webpack_require__(82)
-	var util = __webpack_require__(83)
+	var proto = __webpack_require__(84)
+	var util = __webpack_require__(85)
 	var buildinRe = /^(\$stat|changed|emit|clean|on|off|attrs)$/
 	
 	/**
@@ -10314,7 +10375,7 @@
 
 
 /***/ },
-/* 82 */
+/* 84 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -10323,7 +10384,7 @@
 	 */
 	
 	var Emitter = __webpack_require__(21)
-	var util = __webpack_require__(83)
+	var util = __webpack_require__(85)
 	
 	/**
 	 * Mixin emitter.
@@ -10406,7 +10467,7 @@
 
 
 /***/ },
-/* 83 */
+/* 85 */
 /***/ function(module, exports) {
 
 	/**
@@ -10445,7 +10506,7 @@
 
 
 /***/ },
-/* 84 */
+/* 86 */
 /***/ function(module, exports) {
 
 	/**
@@ -10468,12 +10529,12 @@
 
 
 /***/ },
-/* 85 */
+/* 87 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var domify = __webpack_require__(9)
-	var debounce = __webpack_require__(86)
-	var template = __webpack_require__(88)
+	var debounce = __webpack_require__(88)
+	var template = __webpack_require__(90)
 	var events = __webpack_require__(11)
 	
 	/**
@@ -10594,7 +10655,7 @@
 
 
 /***/ },
-/* 86 */
+/* 88 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -10602,7 +10663,7 @@
 	 * Module dependencies.
 	 */
 	
-	var now = __webpack_require__(87);
+	var now = __webpack_require__(89);
 	
 	/**
 	 * Returns a function, that, as long as it continues to be invoked, will not
@@ -10653,7 +10714,7 @@
 
 
 /***/ },
-/* 87 */
+/* 89 */
 /***/ function(module, exports) {
 
 	module.exports = Date.now || now
@@ -10664,19 +10725,19 @@
 
 
 /***/ },
-/* 88 */
+/* 90 */
 /***/ function(module, exports) {
 
 	module.exports = "<div class=\"more-loading\">\n  <i class=\"more-refresh more-spin\"></i> <span class=\"more-text\">加载中...</span>\n</div>\n";
 
 /***/ },
-/* 89 */
+/* 91 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var classes = __webpack_require__(27)
 	var domify = __webpack_require__(9)
-	var once = __webpack_require__(90)
-	var template = __webpack_require__(92)
+	var once = __webpack_require__(92)
+	var template = __webpack_require__(94)
 	
 	var LOADING_TEXT = '加载中...'
 	var PULL_TEXT = '下拉刷新'
@@ -10803,10 +10864,10 @@
 
 
 /***/ },
-/* 90 */
+/* 92 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var wrappy = __webpack_require__(91)
+	var wrappy = __webpack_require__(93)
 	module.exports = wrappy(once)
 	
 	once.proto = once(function () {
@@ -10830,7 +10891,7 @@
 
 
 /***/ },
-/* 91 */
+/* 93 */
 /***/ function(module, exports) {
 
 	// Returns a wrapper function that returns a wrapped callback
@@ -10869,7 +10930,7 @@
 
 
 /***/ },
-/* 92 */
+/* 94 */
 /***/ function(module, exports) {
 
 	module.exports = "<div class=\"ptr_box\">\n  <div class=\"ptr_container\">\n    <div class=\"ptr_image\"></div>\n    <div class=\"ptr_text\">下拉刷新</div>\n  </div>\n</div>\n";
