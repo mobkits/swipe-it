@@ -11,6 +11,10 @@ TODO: test
 ## Features
 
 * Animation like ios messages
+* Works with [sweet-sortable](https://github.com/chemzqm/sweet-sortable)
+* Support temporarily disable by calling `bind` and `unbind`
+* Support window orientation change & resize event
+* Light weight and performance optimized
 * Optional bind to [list-render](https://github.com/chemzqm/list-render)
 * Custom render function
 * Delegate event binding
