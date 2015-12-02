@@ -51,7 +51,7 @@ s.delegate('touchstart', '.remove', tap(function(e, li) {
 * `template` string or element for element swiped out
 * `opts` optional options
 * `opts.ease` a [ease function or string](https://github.com/component/ease) for reset&expand animation, default `out-quad`
-* `opts.duration` duration for rest in millisecon, default 350
+* `opts.duration` duration for reset in millisecon, default 350
 
 ### .bind(parentNode, selector)
 

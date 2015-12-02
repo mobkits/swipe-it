@@ -1,3 +1,6 @@
+0.1.8
+* add ignore method and duration option
+
 0.1.7
 * support option for ease function
 
