@@ -1,3 +1,7 @@
+0.1.9
+* remove transition support for holder
+* code refactor
+
 0.1.8
 * add ignore method and duration option
 

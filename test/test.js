@@ -15,8 +15,31 @@ function assign(to, from) {
   return to
 }
 
+
+function createList() {
+  var ul = document.createElement('ul')
+  assign(ul.style, {
+    position: 'fixed',
+    top: '0px',
+    left: '0px',
+    width: '200px'
+  })
+  for (var i = 1; i < 5; i ++) {
+    var li = document.createElement('li')
+    assign(li.style, {
+      height: '30px',
+      listStyle: 'none'
+    })
+    li.textContent = i
+    ul.appendChild(li)
+  }
+  document.body.appendChild(ul)
+  return ul
+}
+
 describe('init', function() {
   var template = '<div>remove</div>'
+
   it('should init with template only', function () {
     var s = new SwipeIt(template)
     expect(s.template).toBe(template)
@@ -59,27 +82,6 @@ describe('.bind(list, selector)', function() {
     }).toThrow(/selector/)
   })
 })
-
-function createList() {
-  var ul = document.createElement('ul')
-  assign(ul.style, {
-    position: 'fixed',
-    top: '0px',
-    left: '0px',
-    width: '200px'
-  })
-  for (var i = 1; i < 5; i ++) {
-    var li = document.createElement('li')
-    assign(li.style, {
-      height: '30px',
-      listStyle: 'none'
-    })
-    li.textContent = i
-    ul.appendChild(li)
-  }
-  document.body.appendChild(ul)
-  return ul
-}
 
 describe('.render(fn)', function() {
   this.timeout(5000)
@@ -251,7 +253,7 @@ describe('bind element', function() {
     var touch = new TouchSimulate(first)
     return swipe.reset().then(function () {
       return touch.start().moveLeft(10).wait(500).then(function () {
-        var el = swipe.parentNode.querySelector('li:last-child')
+        var el = swipe.parentNode.querySelector('li:nth-child(2)')
         expect(el).toNotBe(first)
         var t = new TouchSimulate(el)
         return t.start().wait(200).then(function () {
@@ -350,8 +352,8 @@ describe('.clear()', function() {
     s.bind(list, 'li')
     var first = list.querySelector('li:first-child')
     var touch = new TouchSimulate(first)
-    touch.speed(200)
-    touch.start().moveLeft(35).wait(200).then(function () {
+    touch.speed(350)
+    touch.start().moveLeft(20).wait(200).then(function () {
       var el = list.querySelector('.remove')
       var err
       expect(el).toExist()
@@ -494,13 +496,20 @@ describe('bind mobile-list', function() {
     })
   })
 
-  it('should bind event to template', function () {
+  it('should bind event to template', function (done) {
     var fired
+    var first
     var list = new List(tmpl, window, {
       selector: '#mobile-list',
       delegate: {
         remove: tap(function () {
           fired = true
+          s.clear().then(function () {
+            expect(first.parentNode).toNotExist()
+            s.unbind()
+            list.remove()
+            done()
+          })
         })
       },
       bindings: {
@@ -516,19 +525,16 @@ describe('bind mobile-list', function() {
     var template = '<div class="remove" data-color="index" on-touchstart="remove">删除</div>'
     s = SwipeIt(template)
     s.bind(list, 'li')
-    var first = ul.querySelector('li:first-child')
+    first = ul.querySelector('li:first-child')
     var touch = new TouchSimulate(first)
     touch.speed(200)
-    return touch.start().moveLeft(50).wait(200).then(function () {
+    touch.start().moveLeft(50).wait(200).then(function () {
       var el = ul.querySelector('.remove')
       expect(el).toExist()
       var t = new TouchSimulate(el)
       return t.tap().then(function () {
         expect(fired).toBe(true)
       })
-    }).then(function () {
-      s.unbind()
-      list.remove()
     })
   })
 
@@ -568,3 +574,76 @@ describe('bind mobile-list', function() {
   })
 })
 
+describe('.onresize()', function() {
+  it('should work even if not dragging', function () {
+    var template = '<div class="remove" style="width:70px;">remove {index}</div>'
+    var list = createList()
+    var s = SwipeIt(template)
+    s.bind(list, 'li')
+    var err
+    try {
+      s.onresize()
+    } catch(e) {
+      err = e
+    }
+    expect(err).toNotExist()
+    document.body.removeChild(list)
+  })
+
+  it('should change swipeEl style according to holder element', function () {
+    var template = '<div class="remove" style="width:70px;">x</div>'
+    var list = createList()
+    var s = SwipeIt(template)
+    s.bind(list, 'li')
+    var first = list.querySelector('li:first-child')
+    var touch = new TouchSimulate(first)
+    touch.speed(200)
+    return touch.start().moveLeft(50).wait(200).then(function () {
+      expect(s.holder).toExist()
+      s.holder.style.width = '50px'
+      s.onresize()
+      expect(s.swipeEl.style.width).toBe('50px')
+      document.body.removeChild(list)
+    })
+  })
+})
+
+describe('.ignore', function() {
+  var swipe
+  var list
+  var span
+  beforeEach(function () {
+    var template = '<div class="remove" style="width:70px;">x</div>'
+    list = createList()
+    var first = list.firstChild
+    span = document.createElement('span')
+    span.className = 'handle'
+    first.appendChild(span)
+    swipe = SwipeIt(template)
+    swipe.bind(list, 'li')
+    swipe.ignore('.handle')
+  })
+
+  afterEach(function () {
+    document.body.removeChild(list)
+    list = span = swipe = null
+  })
+
+  it('should ignore touch from ignored element', function () {
+    var touch = new TouchSimulate(span)
+    touch.speed(200)
+    return touch.start().moveLeft(50).wait(200).then(function () {
+      expect(swipe.swipeEl).toNotExist()
+      expect(swipe.holder).toNotExist()
+    })
+  })
+
+  it('should not ignore touch from other element', function () {
+    var touch = new TouchSimulate(list.firstChild)
+    touch.speed(200)
+    return touch.start().moveLeft(50).wait(200).then(function () {
+      expect(swipe.swipeEl).toExist()
+      expect(swipe.holder).toExist()
+    })
+  })
+})
