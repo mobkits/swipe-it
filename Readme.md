@@ -2,13 +2,14 @@
 
 Swipe a custom element out.
 
-No test case right now, use with caution
+[![Dependency Status](https://david-dm.org/chemzqm/swipe-it.svg)](https://david-dm.org/chemzqm/swipe-it)
+[![Build Status](https://secure.travis-ci.org/chemzqm/swipe-it.svg)](http://travis-ci.org/chemzqm/swipe-it)
+[![Coverage Status](https://coveralls.io/repos/chemzqm/swipe-it/badge.svg?branch=master&service=github)](https://coveralls.io/github/chemzqm/swipe-it?branch=master)
 
 Give me a [feed back](https://github.com/chemzqm/swipe-it/issues/new) if you have any problem with this.
 
 [Demo](http://chemzqm.github.io/swipe-it/)
 
-TODO: test
 
 ## Features
 
@@ -75,7 +76,7 @@ Delegate `handler` of `type` event with matched `selector` within swiped out ele
 
 ### .reset()
 
-Reset the swiped element to original stat
+Reset the swiped element to original stat with animation, return promise
 
 ### .clear([duration], [ease])
 
@@ -83,4 +84,4 @@ Remove the swiped element and related holder with transition specified by `durat
 
 ### .unbind()
 
-Unbind all event listeners.
+Unbind all event listeners, and reset status synchronize.
