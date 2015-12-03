@@ -47,7 +47,7 @@
 	var scrollfix = __webpack_require__(1)
 	scrollfix(document.querySelector('.scrollable'))
 	if ('ontouchend' in window) {
-	  document.querySelector('#list .alert').style.display = 'none'
+	  document.querySelector('.alert').style.display = 'none'
 	}
 	var detect = __webpack_require__(2)
 	var transform = detect.transform
@@ -7651,7 +7651,7 @@
 	  if (!(this instanceof Sortable)) return new Sortable(el, opts)
 	  if (!el) throw new TypeError('sortable(): expects an element')
 	  opts = opts || {}
-	  this.delta = opts.delta == null ? 10 : opts.delta
+	  this.delta = opts.delta == null ? 15 : opts.delta
 	  this.el = el
 	  util.touchAction(el, 'none')
 	  this.pel = util.getRelativeElement(el)
@@ -7688,7 +7688,7 @@
 	  this.events.bind('touchstart')
 	  this.events.bind('touchmove')
 	  this.events.bind('touchend')
-	  this.events.bind('touchcancel', 'ontouchend')
+	  this.docEvents.bind('touchcancel', 'ontouchend')
 	  this.docEvents.bind('touchend')
 	
 	  if (!hasTouch) {
@@ -7736,6 +7736,7 @@
 	}
 	
 	Sortable.prototype.ontouchstart = function(e) {
+	  if (this.dragging) return
 	  // ignore
 	  if (this.ignored && closest(e.target, this.ignored, this.el)) return
 	  var node = this.findMatch(e)
@@ -7743,10 +7744,11 @@
 	  if (node) node = util.matchAsChild(node, this.el)
 	  // not found
 	  if (node == null) return
-	  if (node === this.disabled) return
 	  var touch = util.getTouch(e)
 	  if (this._handle) e.preventDefault()
+	  if (this.timer) clearTimeout(this.timer)
 	  this.timer = setTimeout(function () {
+	    this.dragging = true
 	    this.dragEl = node
 	    this.index = util.indexof(node)
 	    this.children = util.getChildElements(this.el)
@@ -7775,7 +7777,6 @@
 	      position: 'absolute'
 	    })
 	    this.el.insertBefore(holder, node)
-	    this.dragging = true
 	    this.animate = new Animate(this.pel, node, holder)
 	    this.emit('start')
 	  }.bind(this), 100)
@@ -7784,7 +7785,6 @@
 	Sortable.prototype.ontouchmove = function(e) {
 	  if (this.dragEl == null || this.index == null) return
 	  if (e.changedTouches && e.changedTouches.length !== 1) return
-	  if (e.defaultPrevented) return
 	  e.preventDefault()
 	  e.stopPropagation()
 	  var touch = util.getTouch(e)
@@ -7797,19 +7797,17 @@
 	  this.x = touch.clientX
 	  this.y = touch.clientY
 	  if (this.dir === 'horizon') {
+	    if (dx === 0) return
+	    touchDir = dx > 0 ? 1 : 3
 	    this.tx = touch.clientX - sx
 	    util.translate(d, this.tx, 0)
-	    touchDir = dx > 0 ? 1 : 3
-	    if (dx === 0) return
 	  } else {
+	    if (dy === 0) return
+	    touchDir = dy > 0 ? 0 : 2
 	    this.ty = touch.clientY - sy
 	    util.translate(d, 0, this.ty)
-	    touchDir = dy > 0 ? 0 : 2
-	    if (dy === 0) return
 	  }
-	  if (util.getPosition(touch.clientX, touch.clientY, this.el)) {
-	    this.positionHolder(touch, touchDir)
-	  }
+	  this.positionHolder(touch, touchDir)
 	  return false
 	}
 	
@@ -7841,25 +7839,44 @@
 	  var x = rect.left + rect.width/2
 	  var y = rect.top + rect.height/2
 	  var horizon = this.dir === 'horizon'
-	  var children = this.children
-	  for (var i = children.length - 1; i >= 0; i--) {
-	    var node = children[i]
-	    if (node === d) continue
-	    var pos = util.getPosition(x, y, node)
-	    if (!pos) continue
-	    if (horizon) {
-	      if (touchDir === 1 && pos.dx > - delta) {
-	        this.animate.animate(node, 3)
-	      } else if (touchDir === 3 && pos.dx < delta){
-	        this.animate.animate(node, 1)
-	      }
-	    } else {
-	      if (touchDir === 2 && pos.dy <= delta) {
-	        this.animate.animate(node, 0)
-	      } else if (touchDir === 0 && pos.dy >= -delta){
-	        this.animate.animate(node, 2)
-	      }
+	  var holder = this.holder
+	  var last = this.last || holder
+	  var el = last
+	  var dx
+	  var dy
+	  var property = touchDir < 2 ? 'nextSibling' : 'previousSibling'
+	  while(el) {
+	    if (el.nodeType !== 1 || el === d || el === holder) {
+	      el = el[property]
+	      continue
 	    }
+	    var r = el.getBoundingClientRect()
+	    if (horizon) {
+	      dx = x - (r.left + r.width/2)
+	      if (touchDir === 1 && dx < - delta) break
+	      if (touchDir === 3 && dx > delta) break
+	      if (el === last) {
+	        if ((touchDir === 1 && x > r.right) || (touchDir === 3 && x < r.left)) {
+	          el = el[property]
+	          continue
+	        }
+	      }
+	      this.last = el
+	      this.animate.animate(el, (touchDir + 2)%4)
+	    } else {
+	      dy = y - (r.top +  r.height/2)
+	      if (touchDir === 2 && dy > delta) break
+	      if (touchDir === 0 && dy < - delta) break
+	      if (el === last) {
+	        if ((touchDir === 0 && y > r.bottom) || (touchDir === 2 && y < r.top)) {
+	          el = el[property]
+	          continue
+	        }
+	      }
+	      this.last = el
+	      this.animate.animate(el, (touchDir + 2)%4)
+	    }
+	    el = el[property]
 	  }
 	}
 	
@@ -7878,8 +7895,9 @@
 	    clearTimeout(this.timer)
 	    this.timer = null
 	  }
-	  if (this.dragging === false) return
-	  this.dragging = false
+	  // make sure called once
+	  if (this.mouseStart == null) return
+	  this.mouseStart = null
 	  var p = this.el
 	  var el = this.dragEl
 	  var h = this.holder
@@ -7894,16 +7912,16 @@
 	      this.emit('update', el)
 	    }
 	    delete this.index
-	    this.children = this.animate = this.holder = this.dragEl = null
+	    this.children = this.last = this.animate = this.holder = this.dragEl = null
+	    this.dragging = false
 	    this.emit('end')
 	  }.bind(this))
 	}
 	
 	Sortable.prototype.moveTo = function (target, cb) {
 	  var el = this.dragEl
-	  this.disabled = el
-	  var duration = 320
-	  util.transitionDuration(el, duration, 'linear')
+	  var duration = 330
+	  util.transitionDuration(el, duration, 'ease')
 	  var tx = this.tx || 0
 	  var ty = this.ty || 0
 	  var dir = this.animate.dir
@@ -7918,10 +7936,8 @@
 	  var x = tx + dis.x
 	  var y = ty + dis.y
 	  var nomove = (dis.x ==0 && dis.y === 0)
-	  var self = this
 	  var fn = function () {
 	    el.style[transition] = ''
-	    self.disabled = null
 	    cb()
 	  }
 	  if (nomove) {
@@ -7953,6 +7969,7 @@
 	  }
 	  return {x: x, y: y}
 	}
+	
 
 
 /***/ },
@@ -8085,29 +8102,6 @@
 	    if (el.parentNode === topEl) return el
 	    el = el.parentNode
 	  } while(el)
-	}
-	
-	/**
-	 * Get position by clientX clientY in element
-	 * 1 2 3 4 => tl tr bl br
-	 *
-	 * @param {Number} x
-	 * @param {Number} y
-	 * @param  {Element}  el
-	 * @return {Boolean}
-	 * @api public
-	 */
-	exports.getPosition = function (x, y, el) {
-	  var rect = el.getBoundingClientRect()
-	  var w = rect.width || el.offsetWidth
-	  var h = rect.height || el.offsetHeight
-	  if (x > rect.left && x < rect.left + w && y > rect.top && y < rect.top + h) {
-	    return {
-	      dx: x - (rect.left + w/2),
-	      dy: y - (rect.top + h/2)
-	    }
-	  }
-	  return false
 	}
 	
 	/**
@@ -8292,6 +8286,7 @@
 	  }
 	  return arr
 	}
+	
 
 
 /***/ },
@@ -8457,7 +8452,7 @@
 	    }
 	  } else {
 	    o.transform = true
-	    util.transitionDuration(el, 280)
+	    util.transitionDuration(el, 320)
 	    this.animates[el.id] = o
 	    this.start(o, el, dir)
 	  }
@@ -8504,7 +8499,6 @@
 	    var o = self.animates[el.id]
 	    if (!o) return
 	    var orig = o.orig
-	    self.animates[el.id] = null
 	    // reset el
 	    el.style[transition] = ''
 	    el.style[transform] = ''
@@ -8525,6 +8519,7 @@
 	    } else {
 	      s.width = ((rect.width || holder.offsetWidth) - self.dx) + 'px'
 	    }
+	    self.animates[el.id] = null
 	  }
 	  event.bind(el, transitionend, end)
 	  util.translate(el, x, y)
