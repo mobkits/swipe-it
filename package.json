@@ -1,6 +1,6 @@
 {
   "name": "swipe-it",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "description": "Swipe a custom element out with animation",
   "main": "lib/index.js",
   "directories": {

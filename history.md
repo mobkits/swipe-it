@@ -1,3 +1,6 @@
+0.1.14
+* no swipe for absolute element
+
 0.1.13
 * improve example
 * new badge
