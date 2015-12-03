@@ -1,3 +1,7 @@
+0.1.13
+* improve example
+* new badge
+
 0.1.12
 * doc fix
 * update dependencies
