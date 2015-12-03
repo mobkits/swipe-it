@@ -467,9 +467,10 @@
 	SwipeIt.prototype.ontouchstart = function (e) {
 	  var el = e.delegateTarget
 	  if (this.stat === 'reseting' || classes(el).has('swipe-holder')) return
-	  if (this.tween) this.tween.stop()
 	  // already move
 	  var sel = this.swipeEl
+	  if (el.style.position === 'absolute' && !sel) return
+	  if (this.tween) this.tween.stop()
 	  if (sel && el === sel) {
 	    e.preventDefault()
 	    e.stopImmediatePropagation()
