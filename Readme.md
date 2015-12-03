@@ -32,9 +32,7 @@ var template = require('./template.html')
 var s = new SwipeIt(template)
 s.bind(document.getElementById('list'), 'li')
 s.delegate('touchstart', '.remove', tap(function(e, li) {
-  // remove the swiped node
-  li.parentNode.removeChild(li)
-  // holder remove with transition
+  // remove holder and swiped element with transition
   s.clear().then(function() {
     // callback on element removed
   })
@@ -86,4 +84,4 @@ Remove the swiped element and related holder with transition specified by `durat
 
 ### .unbind()
 
-Unbind all event listeners, and reset status synchronizely.
+Unbind all event listeners, and reset status synchronizely, could be active again be calling `bind`
