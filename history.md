@@ -1,3 +1,7 @@
+0.1.12
+* doc fix
+* update dependencies
+
 0.1.10
 * fix dependencies
 
