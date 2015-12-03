@@ -1,7 +1,7 @@
 var scrollfix = require('scrollfix')
 scrollfix(document.querySelector('.scrollable'))
 if ('ontouchend' in window) {
-  document.querySelector('#list .alert').style.display = 'none'
+  document.querySelector('.alert').style.display = 'none'
 }
 var detect = require('prop-detect')
 var transform = detect.transform
