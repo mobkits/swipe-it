@@ -74,7 +74,7 @@
     "once": "^1.3.3",
     "prop-detect": "^1.0.1",
     "reactive-lite": "^0.5.4",
-    "sweet-sortable": "^0.1.15"
+    "sweet-sortable": "^0.1.17"
   },
   "browser": {
     "events": "component-events",

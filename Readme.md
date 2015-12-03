@@ -2,9 +2,10 @@
 
 Swipe a custom element out.
 
-[![Dependency Status](https://david-dm.org/chemzqm/swipe-it.svg)](https://david-dm.org/chemzqm/swipe-it)
-[![Build Status](https://secure.travis-ci.org/chemzqm/swipe-it.svg)](http://travis-ci.org/chemzqm/swipe-it)
-[![Coverage Status](https://coveralls.io/repos/chemzqm/swipe-it/badge.svg?branch=master&service=github)](https://coveralls.io/github/chemzqm/swipe-it?branch=master)
+[![NPM version](https://img.shields.io/npm/v/swipe-it.svg?style=flat-square)](https://www.npmjs.com/package/swipe-it)
+[![Dependency Status](https://img.shields.io/david/chemzqm/swipe-it.svg?style=flat-square)](https://david-dm.org/chemzqm/swipe-it)
+[![Build Status](https://img.shields.io/travis/chemzqm/swipe-it/master.svg?style=flat-square)](http://travis-ci.org/chemzqm/swipe-it)
+[![Coverage Status](https://img.shields.io/coveralls/chemzqm/swipe-it/master.svg?style=flat-square)](https://coveralls.io/github/chemzqm/swipe-it?branch=master)
 
 Give me a [feed back](https://github.com/chemzqm/swipe-it/issues/new) if you have any problem with this.
 
