@@ -655,3 +655,35 @@ describe('.ignore', function() {
     })
   })
 })
+
+describe('.active', function() {
+
+  var swipe
+  var list
+  var span
+  beforeEach(function () {
+    var template = '<div class="remove" style="width:70px;">x</div>'
+    list = createList()
+    var first = list.firstChild
+    span = document.createElement('span')
+    span.className = 'handle'
+    first.appendChild(span)
+    swipe = SwipeIt(template)
+    swipe.bind(list, 'li')
+  })
+
+  afterEach(function () {
+    document.body.removeChild(list)
+    list = span = swipe = null
+  })
+
+  it('should swipe out', function () {
+    var first = list.querySelector('li:first-child')
+    var promise = swipe.active(first)
+    return promise.then(function () {
+      var el = list.querySelector('.remove')
+      expect(el).toExist()
+      expect(swipe.swipeEl).toBe(first)
+    })
+  })
+})
