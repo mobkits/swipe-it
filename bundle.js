@@ -69,7 +69,6 @@
 	  var sortable = new Sortable(list)
 	  sortable.handle('.handler')
 	  sortable.bind('li')
-	  //sortable.ignore('.swipe-dragging')
 	
 	  var swipe = SwipeIt(template, {
 	    ease: 'out-back'
@@ -85,6 +84,7 @@
 	  swipe.delegate('touchstart', '.remove', tap(function () {
 	    swipe.clear()
 	  }))
+	  swipe.active(list.querySelector('li:first-child'))
 	})()
 	
 	!(function () {
@@ -503,30 +503,50 @@
 	    // for speed calculate
 	    this.ts = at
 	    this.prevX = sx
-	    // show template and bind events
-	    var pel = util.getRelativeElement(el)
-	    var holder = this.holder = createHolder(el)
-	    this.swipeEl = el
-	    if (this.renderFn) {
-	      this.renderFn(holder)
-	    } else {
-	      holder.appendChild(this.templateEl)
-	    }
-	    var templateEl = this.templateEl
-	    util.copy(templateEl.style, {
-	      position: 'absolute',
-	      bottom: '0',
-	      right: '0'
-	    })
-	    templateEl.style.height = holder.style.height
-	    this.bindEvents(holder)
-	    this.orig = util.makeAbsolute(el, pel)
-	    classes(el).add('swipe-dragging')
-	    el.parentNode.insertBefore(holder, el)
-	    this.bindReactive(el, templateEl)
-	    this.min = - templateEl.clientWidth - overlap
-	    this.emit('start', el)
+	    this._start(el)
 	  }
+	}
+	
+	SwipeIt.prototype._start = function (el) {
+	  this.swipeEl = el
+	  // show template and bind events
+	  var pel = util.getRelativeElement(el)
+	  var holder = this.holder = createHolder(el)
+	  var templateEl = this.templateEl.cloneNode(true)
+	  if (this.renderFn) {
+	    this.renderFn(holder)
+	  } else {
+	    holder.appendChild(templateEl)
+	  }
+	  util.copy(templateEl.style, {
+	    position: 'absolute',
+	    bottom: '0',
+	    right: '0'
+	  })
+	  templateEl.style.height = holder.style.height
+	  this.bindEvents(holder)
+	  this.orig = util.makeAbsolute(el, pel)
+	  classes(el).add('swipe-dragging')
+	  el.parentNode.insertBefore(holder, el)
+	  this.bindReactive(el, templateEl)
+	  this.min = - templateEl.clientWidth - overlap
+	  this.emit('start', el)
+	}
+	
+	/**
+	 * Swipe out an element el with optional `ease` and `duration`
+	 *
+	 * @public
+	 * @param  {Element}  el
+	 * @param {String} ease [out-quad]
+	 * @param {Number} duration [350]
+	 * @return {Promise}
+	 */
+	SwipeIt.prototype.active = function (el, ease, duration) {
+	  this._start(el)
+	  ease = ease || this.opts.ease
+	  var minX = this.min + overlap
+	  return this.animate(minX, ease, duration)
 	}
 	
 	/**
@@ -624,12 +644,12 @@
 	 * @param {Element} holder
 	 */
 	SwipeIt.prototype.unbindEvents = function () {
-	  if (this.holderEvents) this.holderEvents.unbind()
+	  if (this.holderEvents != null) this.holderEvents.unbind()
 	  this.holderEvents = null
 	}
 	
 	/**
-	 * Calcute swipe speed and direction with clientX clientY
+	 * Calcute swipe speed and direction with ts and prevX
 	 *
 	 * @param {Number} x
 	 * @private
@@ -888,9 +908,11 @@
 	    var model = this.list.findModel(el)
 	    if (!model) throw new Error('no model find at ListRender with [' + el.outerHTML + ']')
 	    if (!this.reactive) {
-	      this.reactive = new Reactive(templateEl, model, opts)
+	      var r = this.reactive = new Reactive(templateEl, model, opts)
+	      // no parse template again
+	      opts.config = r.config
 	    } else {
-	      this.reactive.bind(model)
+	      this.reactive = new Reactive(templateEl, model, opts)
 	    }
 	  }
 	}
@@ -7335,8 +7357,8 @@
 	  return {
 	    left: r.left - rect.left,
 	    top: r.top -rect.top,
-	    width: r.width || el.offsetWidth,
-	    height: r.height || el.offsetHeight
+	    width: r.width,
+	    height: r.height
 	  }
 	}
 	
