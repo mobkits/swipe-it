@@ -7759,22 +7759,20 @@
 	}
 	
 	Sortable.prototype.ontouchstart = function(e) {
-	  if (this.dragging) return
-	  // ignore
+	  if (this.dragEl != null) return
 	  if (this.ignored && closest(e.target, this.ignored, this.el)) return
-	  var node = this.findMatch(e)
-	  // element to move
-	  if (node) node = util.matchAsChild(node, this.el)
-	  // not found
+	  var node = this.findDelegate(e)
 	  if (node == null) return
+	  if (this.timer) clearTimeout(this.timer)
 	  var touch = util.getTouch(e)
 	  if (this._handle) e.preventDefault()
-	  if (this.timer) clearTimeout(this.timer)
 	  this.timer = setTimeout(function () {
-	    this.dragging = true
 	    this.dragEl = node
+	    this.dragging = true
 	    this.index = util.indexof(node)
-	    this.children = util.getChildElements(this.el)
+	    this.mouseStart = {}
+	    this.x = this.mouseStart.x = touch.clientX,
+	    this.y = this.mouseStart.y = touch.clientY
 	    var pos = util.getAbsolutePosition(node, this.pel)
 	    // place holder
 	    var holder = this.holder = node.cloneNode(false)
@@ -7786,10 +7784,6 @@
 	      height: pos.height + 'px',
 	      width: pos.width + 'px'
 	    })
-	    this.mouseStart = {
-	      x: touch.clientX,
-	      y: touch.clientY
-	    }
 	    classes(node).add('sortable-dragging')
 	    this.orig = util.copy(node.style, {
 	      height: pos.height + 'px',
@@ -7806,30 +7800,29 @@
 	}
 	
 	Sortable.prototype.ontouchmove = function(e) {
-	  if (this.dragEl == null || this.index == null) return
+	  if (this.mouseStart == null) return
 	  if (e.changedTouches && e.changedTouches.length !== 1) return
+	  var node = this.findDelegate(e)
+	  if (!node || node != this.dragEl) return this.reset()
 	  e.preventDefault()
 	  e.stopPropagation()
 	  var touch = util.getTouch(e)
 	  var touchDir = 0
-	  var sx = this.mouseStart.x
-	  var sy = this.mouseStart.y
-	  var d = this.dragEl
-	  var dx = touch.clientX - (this.x || sx)
-	  var dy = touch.clientY - (this.y || sy)
-	  this.x = touch.clientX
-	  this.y = touch.clientY
 	  if (this.dir === 'horizon') {
+	    var dx = touch.clientX - this.x
 	    if (dx === 0) return
 	    touchDir = dx > 0 ? 1 : 3
-	    this.tx = touch.clientX - sx
-	    util.translate(d, this.tx, 0)
+	    this.tx = touch.clientX - this.mouseStart.x
+	    util.translate(node, this.tx, 0)
 	  } else {
+	    var dy = touch.clientY - this.y
 	    if (dy === 0) return
 	    touchDir = dy > 0 ? 0 : 2
-	    this.ty = touch.clientY - sy
-	    util.translate(d, 0, this.ty)
+	    this.ty = touch.clientY - this.mouseStart.y
+	    util.translate(node, 0, this.ty)
 	  }
+	  this.x = touch.clientX
+	  this.y = touch.clientY
 	  this.positionHolder(touch, touchDir)
 	  return false
 	}
@@ -7845,13 +7838,17 @@
 	  this.off()
 	}
 	
-	Sortable.prototype.findMatch = function(e){
-	  if (this._handle) return closest(e.target, this._handle, this.el)
-	  if (this.selector) {
-	    var el = closest(e.target, this.selector, this.el)
-	    return el
+	Sortable.prototype.findDelegate = function(e){
+	  var el
+	  if (this._handle) {
+	    el = closest(e.target, this._handle, this.el)
+	  } else if (this.selector) {
+	    el = closest(e.target, this.selector, this.el)
+	  } else {
+	    el = e.target
 	  }
-	  return util.matchAsChild(e.target, this.el)
+	  if (!el) return null
+	  return util.matchAsChild(el, this.el)
 	}
 	
 	var positionHolder = function (e, touchDir) {
@@ -7865,8 +7862,6 @@
 	  var holder = this.holder
 	  var last = this.last || holder
 	  var el = last
-	  var dx
-	  var dy
 	  var property = touchDir < 2 ? 'nextSibling' : 'previousSibling'
 	  while(el) {
 	    if (el.nodeType !== 1 || el === d || el === holder) {
@@ -7875,7 +7870,7 @@
 	    }
 	    var r = el.getBoundingClientRect()
 	    if (horizon) {
-	      dx = x - (r.left + r.width/2)
+	      var dx = x - (r.left + r.width/2)
 	      if (touchDir === 1 && dx < - delta) break
 	      if (touchDir === 3 && dx > delta) break
 	      if (el === last) {
@@ -7887,7 +7882,7 @@
 	      this.last = el
 	      this.animate.animate(el, (touchDir + 2)%4)
 	    } else {
-	      dy = y - (r.top +  r.height/2)
+	      var dy = y - (r.top +  r.height/2)
 	      if (touchDir === 2 && dy > delta) break
 	      if (touchDir === 0 && dy < - delta) break
 	      if (el === last) {
@@ -7921,28 +7916,30 @@
 	  // make sure called once
 	  if (this.mouseStart == null) return
 	  this.mouseStart = null
-	  var p = this.el
 	  var el = this.dragEl
 	  var h = this.holder
-	  if (!h) return
-	  this.moveTo(h, function () {
+	  this.moveTo(el, h, function () {
 	    el.style[transform] = ''
-	    p.insertBefore(el, h)
-	    p.removeChild(h)
+	    el.style[transition] = ''
+	    if (el.parentNode) {
+	      el.parentNode.insertBefore(el, h)
+	    }
+	    if (h.parentNode) {
+	      h.parentNode.removeChild(h)
+	    }
 	    util.copy(el.style, this.orig)
-	    classes(el).remove('sortable-dragging')
 	    if (util.indexof(el) !== this.index) {
 	      this.emit('update', el)
 	    }
+	    classes(el).remove('sortable-dragging')
 	    delete this.index
-	    this.children = this.last = this.animate = this.holder = this.dragEl = null
+	    this.last = this.animate = this.holder = this.dragEl = null
 	    this.dragging = false
 	    this.emit('end')
 	  }.bind(this))
 	}
 	
-	Sortable.prototype.moveTo = function (target, cb) {
-	  var el = this.dragEl
+	Sortable.prototype.moveTo = function (el, target, cb) {
 	  var duration = 330
 	  util.transitionDuration(el, duration, 'ease')
 	  var tx = this.tx || 0
@@ -7955,44 +7952,21 @@
 	      dir = ty > 0 ? 2 : 0
 	    }
 	  }
-	  var dis = this.getDistance(el, target, dir)
+	  var dis = util.getDistance(el, target, dir)
 	  var x = tx + dis.x
 	  var y = ty + dis.y
 	  var nomove = (dis.x ==0 && dis.y === 0)
-	  var fn = function () {
-	    el.style[transition] = ''
-	    cb()
-	  }
 	  if (nomove) {
-	    setTimeout(fn, duration)
+	    setTimeout(cb, duration)
 	  } else {
 	    var end = function () {
 	      event.unbind(el, transitionend, end)
-	      fn()
+	      cb()
 	    }
 	    event.bind(el, transitionend, end)
 	    util.translate(el, x, y)
 	  }
 	}
-	
-	Sortable.prototype.getDistance = function (from, to, dir) {
-	  var x
-	  var y
-	  var r = from.getBoundingClientRect()
-	  var tr = to.getBoundingClientRect()
-	  var prop
-	  if (dir%2 === 0) {
-	    x = 0
-	    prop = dir === 0 ? 'top' : 'bottom'
-	    y = tr[prop] - r[prop]
-	  } else {
-	    y = 0
-	    prop = dir === 1 ? 'left' : 'right'
-	    x = tr[prop] - r[prop]
-	  }
-	  return {x: x, y: y}
-	}
-	
 
 
 /***/ },
@@ -8252,6 +8226,24 @@
 	  }
 	}
 	
+	exports.getDistance = function (from, to, dir) {
+	  var x
+	  var y
+	  var r = from.getBoundingClientRect()
+	  var tr = to.getBoundingClientRect()
+	  var prop
+	  if (dir%2 === 0) {
+	    x = 0
+	    prop = dir === 0 ? 'top' : 'bottom'
+	    y = tr[prop] - r[prop]
+	  } else {
+	    y = 0
+	    prop = dir === 1 ? 'left' : 'right'
+	    x = tr[prop] - r[prop]
+	  }
+	  return {x: x, y: y}
+	}
+	
 	/**
 	 * Set transition duration to `ms`
 	 *
@@ -8297,19 +8289,6 @@
 	    s[touchAction] = value;
 	  }
 	}
-	
-	exports.getChildElements = function (el) {
-	  var nodes = el.childNodes
-	  var arr = []
-	  for (var i = 0, l = nodes.length; i < l; i++) {
-	    var n = nodes[i]
-	    if (n.nodeType === 1) {
-	      arr.push(n)
-	    }
-	  }
-	  return arr
-	}
-	
 
 
 /***/ },
@@ -8442,8 +8421,8 @@
 	  var d = this.dragEl = dragEl
 	  var r = d.getBoundingClientRect()
 	  this.holder = holder
-	  this.dx = r.width || d.offsetWidth
-	  this.dy = r.height || d.offsetHeight
+	  this.dx = r.width
+	  this.dy = r.height
 	  this.pel = pel
 	  this.animates = {}
 	}
@@ -8498,8 +8477,8 @@
 	Animate.prototype.start = function (o, el, dir) {
 	  var holder = this.holder
 	  var r = holder.getBoundingClientRect()
-	  var h = r.height || holder.offsetHeight
-	  var w = r.width || holder.offsetWidth
+	  var h = r.height
+	  var w = r.width
 	  var s = holder.style
 	  o.orig = util.makeAbsolute(el, this.pel)
 	  // bigger the holder
@@ -8538,9 +8517,9 @@
 	    // reset holder
 	    var rect = holder.getBoundingClientRect()
 	    if (dir%2 === 0) {
-	      s.height = ((rect.height || holder.offsetHeight) - self.dy) + 'px'
+	      s.height = (rect.height - self.dy) + 'px'
 	    } else {
-	      s.width = ((rect.width || holder.offsetWidth) - self.dx) + 'px'
+	      s.width = (rect.width - self.dx) + 'px'
 	    }
 	    self.animates[el.id] = null
 	  }
