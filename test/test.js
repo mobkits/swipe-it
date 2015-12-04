@@ -81,6 +81,13 @@ describe('.bind(list, selector)', function() {
       s.bind(list)
     }).toThrow(/selector/)
   })
+
+  it('should throw if bind list invalid', function () {
+    var s = SwipeIt(domify(template))
+    expect(function(){
+      s.bind('invalid', 'li')
+    }).toThrow(/invalid/)
+  })
 })
 
 describe('.render(fn)', function() {
@@ -251,9 +258,10 @@ describe('bind element', function() {
 
   it('should fast reset when touch another element', function () {
     var touch = new TouchSimulate(first)
+    touch.speed(200)
     return swipe.reset().then(function () {
-      return touch.start().moveLeft(10).wait(500).then(function () {
-        var el = swipe.parentNode.querySelector('li:nth-child(2)')
+      return touch.start().moveLeft(40).wait(400).then(function () {
+        var el = swipe.parentNode.querySelector('li:last-child')
         expect(el).toNotBe(first)
         var t = new TouchSimulate(el)
         return t.start().wait(200).then(function () {
