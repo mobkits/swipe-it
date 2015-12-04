@@ -1,3 +1,6 @@
+0.1.15
+* add active method
+
 0.1.14
 * no swipe for absolute element
 
