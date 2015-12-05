@@ -7655,6 +7655,7 @@
 	var Animate = __webpack_require__(69)
 	var transition = __webpack_require__(67)
 	var transitionend = __webpack_require__(70)
+	var raf = __webpack_require__(29)
 	
 	var hasTouch = 'ontouchend' in window
 	
@@ -7675,6 +7676,7 @@
 	  if (!el) throw new TypeError('sortable(): expects an element')
 	  opts = opts || {}
 	  this.delta = opts.delta == null ? 15 : opts.delta
+	  this.duration = opts.duration || 330
 	  this.el = el
 	  util.touchAction(el, 'none')
 	  this.pel = util.getRelativeElement(el)
@@ -7683,12 +7685,14 @@
 	  var h
 	  this.on('start', function () {
 	    h = el.style.height
-	    var ch = el.getBoundingClientRect().height || el.clientHeight
+	    var ch = el.getBoundingClientRect().height
 	    el.style.height = ch + 'px'
 	  })
 	  this.on('end', function () {
 	    el.style.height = h
 	  })
+	  this.tx = 0
+	  this.ty = 0
 	}
 	
 	/**
@@ -7740,6 +7744,12 @@
 	  return this
 	}
 	
+	/**
+	 * Set to horizon mode
+	 *
+	 * @public
+	 * @return {undefined}
+	 */
 	Sortable.prototype.horizon = function () {
 	  this.dir = 'horizon'
 	  return this
@@ -7758,6 +7768,11 @@
 	  return this
 	}
 	
+	/**
+	 * ontouchstart event handler
+	 *
+	 * @private
+	 */
 	Sortable.prototype.ontouchstart = function(e) {
 	  if (this.dragEl != null) return
 	  if (this.ignored && closest(e.target, this.ignored, this.el)) return
@@ -7799,6 +7814,11 @@
 	  }.bind(this), 100)
 	}
 	
+	/**
+	 * ontouchmove event handler
+	 *
+	 * @private
+	 */
 	Sortable.prototype.ontouchmove = function(e) {
 	  if (this.mouseStart == null) return
 	  if (e.changedTouches && e.changedTouches.length !== 1) return
@@ -7822,14 +7842,24 @@
 	  }
 	  this.x = touch.clientX
 	  this.y = touch.clientY
-	  this.positionHolder(touch, touchDir)
+	  this.positionHolder(touchDir)
 	  return false
 	}
 	
+	/**
+	 * ontouchend event handler
+	 *
+	 * @private
+	 */
 	Sortable.prototype.ontouchend = function() {
 	  this.reset()
 	}
 	
+	/**
+	 * Unbind all event listeners
+	 *
+	 * @public
+	 */
 	Sortable.prototype.remove =
 	Sortable.prototype.unbind = function() {
 	  this.events.unbind()
@@ -7850,18 +7880,26 @@
 	  return util.matchAsChild(el, this.el)
 	}
 	
-	var positionHolder = function (e, touchDir) {
+	/**
+	 * Position the holder element and animate the overlaped element(s)
+	 *
+	 * @private
+	 * @param {Number} touchDir
+	 */
+	var positionHolder = function (touchDir) {
 	  var d = this.dragEl
 	  if (d == null) return
 	  var delta = this.delta
 	  var rect = d.getBoundingClientRect()
 	  var x = rect.left + rect.width/2
 	  var y = rect.top + rect.height/2
+	  if (!this.connected) this.emit('move', touchDir)
 	  var horizon = this.dir === 'horizon'
 	  var holder = this.holder
 	  var last = this.last || holder
 	  var el = last
 	  var property = touchDir < 2 ? 'nextSibling' : 'previousSibling'
+	
 	  while(el) {
 	    if (el.nodeType !== 1 || el === d || el === holder) {
 	      el = el[property]
@@ -7915,46 +7953,117 @@
 	  // make sure called once
 	  if (this.mouseStart == null) return
 	  this.mouseStart = null
+	  if (!this.connected) this.emit('reset')
+	  var parentNode = this.el
 	  var el = this.dragEl
 	  var h = this.holder
-	  this.moveTo(el, h, function () {
-	    // performance better
-	    el.style[transform] = ''
-	    el.style[transition] = ''
-	    if (el.parentNode) {
-	      el.parentNode.insertBefore(el, h)
+	  var handled = this.handled
+	  function cb() {
+	    if (!handled) {
+	      // performance better
+	      el.style[transform] = ''
+	      el.style[transition] = ''
+	      parentNode.insertBefore(el, h)
+	      util.copy(el.style, this.orig)
+	      if (util.indexof(el) !== this.index) {
+	        this.emit('update', el)
+	      }
+	      classes(el).remove('sortable-dragging')
+	    } else {
+	      this.emit('remove', el)
 	    }
-	    if (h.parentNode) {
-	      h.parentNode.removeChild(h)
-	    }
-	    util.copy(el.style, this.orig)
-	    if (util.indexof(el) !== this.index) {
-	      this.emit('update', el)
-	    }
-	    classes(el).remove('sortable-dragging')
-	    delete this.index
-	    this.last = this.animate = this.holder = this.dragEl = null
-	    this.dragging = false
-	    this.emit('end')
-	  }.bind(this))
+	    this.clean()
+	  }
+	  if (handled) return setTimeout(cb.bind(this), 500)
+	  var dir = this.getDirection()
+	  if (this.connected) {
+	    this.connectedMoveTo(el, h, dir, cb.bind(this))
+	  } else {
+	    this.moveTo(el, h, dir, cb.bind(this))
+	  }
 	}
 	
-	Sortable.prototype.moveTo = function (el, target, cb) {
-	  var duration = 330
-	  util.transitionDuration(el, duration, 'ease')
-	  var tx = this.tx || 0
-	  var ty = this.ty || 0
+	/**
+	 * Get the last animate direction for dragEl
+	 *
+	 * @private
+	 * @return {Number}
+	 */
+	Sortable.prototype.getDirection = function () {
 	  var dir = this.animate.dir
-	  if (!dir) {
+	  if (dir == null) {
 	    if (this.dir === 'horizon') {
-	      dir = tx > 0 ? 1 : 3
+	      dir = this.tx > 0 ? 1 : 3
 	    } else {
-	      dir = ty > 0 ? 2 : 0
+	      dir = this.ty > 0 ? 2 : 0
 	    }
 	  }
+	  return dir
+	}
+	
+	/**
+	 * Move to for the connected status
+	 *
+	 * @public
+	 * @param  {Element}  el
+	 * @param {Element} target
+	 * @param {Number} dir
+	 * @param  {Function}  cb
+	 * @return {undefined}
+	 */
+	Sortable.prototype.connectedMoveTo = function (el, target, dir, cb) {
+	  var duration = this.duration
+	  var parentNode = el.parentNode
+	  var prop = dir%2 === 0 ? 'height' : 'width'
+	  var d = parseInt(el.style[prop], 10)
+	  var r = parentNode.getBoundingClientRect()
+	  var s = r[prop]
+	  var border
+	  var start
+	  if (dir%2 === 0) {
+	    border = dir === 0 ? 'top' : 'bottom'
+	  } else {
+	    border = dir === 1 ? 'left' : 'right'
+	  }
+	  var tx = this.tx
+	  var ty = this.ty
+	  var to = util.getBoundingClientRect(target)[border]
+	  var from = util.getBoundingClientRect(el)[border]
+	  var dis = to - from
+	  function animate(ts) {
+	    if (!start) start = ts
+	    var p = (ts - start)/duration
+	    if (p > 1) p = 1
+	    parentNode.style[prop] = (s - d*p ) + 'px'
+	    var cur = util.getBoundingClientRect(target)[border]
+	    if (dir%2 === 0) {
+	      var y = ty + (dis*p) + cur - to
+	      util.translate(el, tx, y)
+	    } else {
+	      var x = tx + (dis*p) + cur - to
+	      util.translate(el, x, ty)
+	    }
+	    if (p === 1) return cb()
+	    raf(animate)
+	  }
+	  raf(animate)
+	}
+	
+	/**
+	 * Move el to target with move direction and callback
+	 *
+	 * @private
+	 * @param  {Element}  el
+	 * @param {Element} target
+	 * @param {Number} dir
+	 * @param  {Function}  cb
+	 */
+	Sortable.prototype.moveTo = function (el, target, dir, cb) {
+	  var duration = this.duration
+	  util.transitionDuration(el, duration, 'ease')
 	  var dis = util.getDistance(el, target, dir)
-	  var x = tx + dis.x
-	  var y = ty + dis.y
+	  var x = (this.tx || 0) + dis.x
+	  var y = (this.ty || 0) + dis.y
 	  var nomove = (dis.x ==0 && dis.y === 0)
 	  if (nomove) {
 	    setTimeout(cb, duration)
@@ -7966,6 +8075,95 @@
 	    event.bind(el, transitionend, end)
 	    util.translate(el, x, y)
 	  }
+	}
+	
+	/**
+	 * Connect to another sortable
+	 *
+	 * @public
+	 * @param {Sortable} sortable
+	 */
+	Sortable.prototype.connect = function (sortable) {
+	  var self = this
+	  var dir = 0
+	  var parentNode = this.el
+	  var rect = parentNode.getBoundingClientRect()
+	  var r = sortable.el.getBoundingClientRect()
+	  if (this.dir === 'horizon') {
+	    dir = rect.left > r.left ? 1 : 3
+	  } else {
+	    dir = rect.top > r.top ? 0 : 2
+	  }
+	  var h
+	  var padding
+	  this.on('start', function () {
+	    self.connected = false
+	  })
+	  sortable.on('start', function () {
+	    self.dragging = true
+	    self.connected = true
+	    self.orig = sortable.orig
+	    self.dragEl = sortable.dragEl
+	    self.mouseStart = sortable.mouseStart
+	    var holder = self.holder = sortable.holder.cloneNode(true)
+	    h = holder.style.height
+	    padding = holder.style.padding
+	    holder.style.height = '0px'
+	    holder.style.padding = '0px'
+	    holder.style[transition] = 'all 0.2s ease'
+	    if (dir < 2) {
+	      var first = parentNode.firstChild
+	      if (first) {
+	        parentNode.insertBefore(holder, first)
+	      } else {
+	        parentNode.appendChild(holder)
+	      }
+	    } else {
+	      parentNode.appendChild(holder)
+	    }
+	    setTimeout(function () {
+	      self.holder.style.height = h
+	      self.holder.style.padding = padding
+	    })
+	    function end() {
+	      event.unbind(holder, transitionend, end)
+	      holder.style[transition] = ''
+	      h = ''
+	    }
+	    event.bind(holder, transitionend, end)
+	    self.animate = new Animate(self.pel, self.dragEl, holder)
+	  })
+	  sortable.on('move', function (dir) {
+	    self.tx = sortable.tx
+	    self.ty = sortable.ty
+	    positionHolder.call(self, dir)
+	  })
+	
+	  sortable.on('reset', function () {
+	    var rect = sortable.dragEl.getBoundingClientRect()
+	    var inside = util.intersect(parentNode, rect)
+	    if (inside) {
+	      sortable.handled = true
+	      self.reset()
+	    } else {
+	      self.clean()
+	    }
+	  })
+	}
+	
+	/**
+	 * Clean the element and status
+	 *
+	 * @private
+	 */
+	Sortable.prototype.clean = function () {
+	  this.el.removeChild(this.holder)
+	  this.last = this.animate = this.holder = this.dragEl = null
+	  this.dragging = false
+	  this.handled = false
+	  this.mouseStart = null
+	  delete this.index
+	  this.emit('end')
 	}
 
 
@@ -8203,7 +8401,7 @@
 	exports.indexof = function (el) {
 	  var children = el.parentNode.children
 	  for (var i = children.length - 1; i >= 0; i--) {
-	    var node = children[i];
+	    var node = children[i]
 	    if (node === el) {
 	      return i
 	    }
@@ -8244,6 +8442,16 @@
 	  return {x: x, y: y}
 	}
 	
+	exports.getBoundingClientRect = function (el) {
+	  var r = el.getBoundingClientRect()
+	  return {
+	    left: r.left,
+	    top: r.top,
+	    right: r.left + r.width,
+	    bottom: r.top + r.height
+	  }
+	}
+	
 	/**
 	 * Set transition duration to `ms`
 	 *
@@ -8253,7 +8461,7 @@
 	 */
 	var prefix = transition.replace(/transition/i, '').toLowerCase()
 	exports.transitionDuration = function(el, ms, ease){
-	  var s = el.style;
+	  var s = el.style
 	  ease = ease || 'ease-in-out'
 	  if (!prefix) {
 	    s[transition] = ms + 'ms transform ' + ease
@@ -8270,12 +8478,12 @@
 	 */
 	exports.getTouch = function(e){
 	  // "mouse" and "Pointer" events just use the event object itself
-	  var touch = e;
+	  var touch = e
 	  if (e.changedTouches && e.changedTouches.length > 0) {
 	    // W3C "touch" events use the `changedTouches` array
-	    touch = e.changedTouches[0];
+	    touch = e.changedTouches[0]
 	  }
-	  return touch;
+	  return touch
 	}
 	
 	/**
@@ -8284,10 +8492,42 @@
 	 * @api private
 	 */
 	exports.touchAction = function(el, value){
-	  var s = el.style;
+	  var s = el.style
 	  if (touchAction) {
-	    s[touchAction] = value;
+	    s[touchAction] = value
 	  }
+	}
+	
+	/**
+	 * Check if two element intersect
+	 *
+	 * @public
+	 * @param  {Element}  node
+	 * @param  {Object}  b
+	 * @return {Boolean}
+	 */
+	exports.intersect = function (node, b) {
+	  var a = node.getBoundingClientRect()
+	  var al = a.left
+	  var ar = a.left+a.width
+	  var bl = b.left
+	  var br = b.left+b.width
+	
+	  var at = a.top
+	  var ab = a.top+a.height
+	  var bt = b.top
+	  var bb = b.top+b.height
+	
+	  if(bl>ar || br<al){return false;}//overlap not possible
+	  if(bt>ab || bb<at){return false;}//overlap not possible
+	
+	  if(bl>al && bl<ar){return true;}
+	  if(br>al && br<ar){return true;}
+	
+	  if(bt>at && bt<ab){return true;}
+	  if(bb>at && bb<ab){return true;}
+	
+	  return false
 	}
 
 
@@ -8418,11 +8658,10 @@
 	var uid = __webpack_require__(71)
 	
 	function Animate(pel, dragEl, holder) {
-	  var d = this.dragEl = dragEl
-	  var r = d.getBoundingClientRect()
+	  this.dragEl = dragEl
 	  this.holder = holder
-	  this.dx = r.width
-	  this.dy = r.height
+	  this.width = parseInt(holder.style.width, 10)
+	  this.height = parseInt(holder.style.height, 10)
 	  this.pel = pel
 	  this.animates = {}
 	}
@@ -8438,8 +8677,8 @@
 	Animate.prototype.animate = function (el, dir) {
 	  if (!el.id) el.id = uid(7)
 	  var o = this.animates[el.id] || {}
-	  if (o.dir === dir) return
 	  this.dir = dir
+	  if (o.dir === dir) return
 	  o.dir = dir
 	  // var holder = this.holder
 	  if (o.end) {
@@ -8449,7 +8688,7 @@
 	      this.transit(el, 0, 0, dir)
 	    } else {
 	      o.transform = true
-	      var props = this.getTransformProperty(dir)
+	      var props = this.getTransformProperty(dir, o.width, o.height)
 	      this.transit(el, props.x, props.y, dir)
 	    }
 	  } else {
@@ -8460,34 +8699,30 @@
 	  }
 	}
 	
-	Animate.prototype.getTransformProperty = function (dir) {
-	  var x
-	  var y
+	Animate.prototype.getTransformProperty = function (dir, w, h) {
+	  var o = {x: 0, y: 0}
 	  if (dir%2 === 0) {
-	    y = dir > 1 ? - this.dy : this.dy
+	    o.y = dir > 1 ? - h : h
 	  } else {
-	    x = dir > 1 ? - this.dx : this.dx
+	    o.x = dir > 1 ? - w : w
 	  }
-	  return {
-	    x: x,
-	    y: y
-	  }
+	  return o
 	}
 	
 	Animate.prototype.start = function (o, el, dir) {
 	  var holder = this.holder
-	  var r = holder.getBoundingClientRect()
-	  var h = r.height
-	  var w = r.width
-	  var s = holder.style
+	  var rect = holder.getBoundingClientRect()
+	  var r = el.getBoundingClientRect()
+	  var w = o.width = r.width
+	  var h = o.height = r.height
 	  o.orig = util.makeAbsolute(el, this.pel)
 	  // bigger the holder
 	  if (dir%2 === 0) {
-	    s.height = (h + this.dy) + 'px'
+	    holder.style.height = (rect.height + h) + 'px'
 	  } else {
-	    s.width = (w + this.dx) + 'px'
+	    holder.style.width = (rect.width + w) + 'px'
 	  }
-	  var props = this.getTransformProperty(dir)
+	  var props = this.getTransformProperty(dir, w, h)
 	  // test if transition begin
 	  o.end = this.transit(el, props.x, props.y, dir)
 	}
@@ -8517,9 +8752,11 @@
 	    // reset holder
 	    var rect = holder.getBoundingClientRect()
 	    if (dir%2 === 0) {
-	      s.height = (rect.height - self.dy) + 'px'
+	      var h = Math.max(self.height, rect.height - o.height)
+	      s.height = h + 'px'
 	    } else {
-	      s.width = (rect.width - self.dx) + 'px'
+	      var w = Math.max(self.width, rect.width - o.width)
+	      s.width = w + 'px'
 	    }
 	    self.animates[el.id] = null
 	  }
