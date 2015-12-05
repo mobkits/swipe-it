@@ -55,7 +55,7 @@
     "scrollfix": "0.0.2",
     "stack-source-map": "^1.0.4",
     "style-loader": "^0.13.0",
-    "sweet-sortable": "^0.1.19",
+    "sweet-sortable": "^0.1.20",
     "touch-simulate": "^0.1.1",
     "url-loader": "^0.5.6",
     "webpack": "^1.12.6",
