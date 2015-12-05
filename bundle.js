@@ -7724,7 +7724,7 @@
 	  // MS IE touch events
 	  this.events.bind('PointerDown', 'ontouchstart')
 	  this.events.bind('PointerMove', 'ontouchmove')
-	  this.docEvents.bind('PointerUp', 'ontouchstart')
+	  this.docEvents.bind('PointerUp', 'ontouchend')
 	  return this
 	}
 	
@@ -7802,8 +7802,7 @@
 	Sortable.prototype.ontouchmove = function(e) {
 	  if (this.mouseStart == null) return
 	  if (e.changedTouches && e.changedTouches.length !== 1) return
-	  var node = this.findDelegate(e)
-	  if (!node || node != this.dragEl) return this.reset()
+	  var el = this.dragEl
 	  e.preventDefault()
 	  e.stopPropagation()
 	  var touch = util.getTouch(e)
@@ -7813,13 +7812,13 @@
 	    if (dx === 0) return
 	    touchDir = dx > 0 ? 1 : 3
 	    this.tx = touch.clientX - this.mouseStart.x
-	    util.translate(node, this.tx, 0)
+	    util.translate(el, this.tx, 0)
 	  } else {
 	    var dy = touch.clientY - this.y
 	    if (dy === 0) return
 	    touchDir = dy > 0 ? 0 : 2
 	    this.ty = touch.clientY - this.mouseStart.y
-	    util.translate(node, 0, this.ty)
+	    util.translate(el, 0, this.ty)
 	  }
 	  this.x = touch.clientX
 	  this.y = touch.clientY
@@ -7919,6 +7918,7 @@
 	  var el = this.dragEl
 	  var h = this.holder
 	  this.moveTo(el, h, function () {
+	    // performance better
 	    el.style[transform] = ''
 	    el.style[transition] = ''
 	    if (el.parentNode) {
