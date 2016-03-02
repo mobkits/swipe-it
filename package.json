@@ -68,6 +68,7 @@
     "component-events": "^1.0.9",
     "component-matches-selector": "^0.1.5",
     "component-raf": "^1.2.0",
+    "component-tap-event": "^1.1.2",
     "component-tween": "^1.2.0",
     "component-uid": "0.0.2",
     "domify": "^1.4.0",
